@@ -16,8 +16,7 @@ router = APIRouter(prefix="/items", tags=["Items"])
 
 @router.post("", summary="Создание товара")
 async def create_new_item(
-        new_item_schema: ItemCreate,
-        item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
+    new_item_schema: ItemCreate, item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
 ):
     try:
         new_item_data = Item(title=new_item_schema.title, price=new_item_schema.price)
@@ -31,8 +30,7 @@ async def create_new_item(
 
 @router.get("/{item_id}", summary="Вывод товара по ID", response_model=ItemResponse)
 async def get_item_by_id(
-        item_id: int,
-        item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
+    item_id: int, item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
 ):
     try:
         item = await ItemApplications.fetch_item_by_id(item_id, item_repo)
@@ -46,11 +44,13 @@ async def get_item_by_id(
         raise HTTPException(status_code=500, detail="Failed to fetch item")
 
 
-@router.get("", summary="Вывод всех заметок", response_model=Union[List[ItemResponse], Dict])
+@router.get(
+    "", summary="Вывод всех заметок", response_model=Union[List[ItemResponse], Dict]
+)
 async def get_all_items(
-        item_repo: Annotated[ItemRepo, Depends(get_item_repo)],
-        offset: Optional[int] = 0,
-        limit: Optional[int] = 10
+    item_repo: Annotated[ItemRepo, Depends(get_item_repo)],
+    offset: Optional[int] = 0,
+    limit: Optional[int] = 10,
 ):
     try:
         items = await ItemApplications.fetch_all_items(offset, limit, item_repo)
@@ -66,13 +66,17 @@ async def get_all_items(
 
 @router.put("/{item_id}", summary="Изменение товара по ID")
 async def update_item_data_by_id(
-        item_id: int,
-        update_data: ItemCreate,
-        item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
+    item_id: int,
+    update_data: ItemCreate,
+    item_repo: Annotated[ItemRepo, Depends(get_item_repo)],
 ):
     try:
-        update_item_data = Item(id=item_id, title=update_data.title, price=update_data.price)
-        updated_item = await ItemApplications.update_item_data(update_item_data, item_repo)
+        update_item_data = Item(
+            id=item_id, title=update_data.title, price=update_data.price
+        )
+        updated_item = await ItemApplications.update_item_data(
+            update_item_data, item_repo
+        )
         item_response = ItemResponse.model_validate(updated_item)
         return {"message": "Item updated successfully", "item": item_response}
     except ItemNotFound as e:
@@ -85,8 +89,7 @@ async def update_item_data_by_id(
 
 @router.delete("/{item_id}", summary="Удаление товара по ID")
 async def delete_note_by_id(
-        item_id: int,
-        item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
+    item_id: int, item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
 ):
     try:
         await ItemApplications.delete_item(item_id, item_repo)

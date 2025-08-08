@@ -1,9 +1,8 @@
 import logging
-from typing import List, Optional
+from typing import List
 from items_app.application.application_exceptions import ItemNotFound
 from items_app.infrastructure.models import Item
 from items_app.infrastructure.repository import ItemRepo
-from items_app.api.schemas import ItemCreate, ItemResponse
 
 
 logger = logging.getLogger(__name__)
@@ -21,7 +20,6 @@ class ItemApplications:
             logger.error(f"Error of creating item: {e}")
             raise
 
-
     @staticmethod
     async def fetch_item_by_id(item_id: int, item_repo: ItemRepo) -> Item | None:
         try:
@@ -34,15 +32,15 @@ class ItemApplications:
             logger.error(f"Error of getting item by id: {e}")
             raise
 
-
     @staticmethod
-    async def fetch_all_items(offset: int, limit: int, item_repo: ItemRepo) -> List[Item] | None:
+    async def fetch_all_items(
+        offset: int, limit: int, item_repo: ItemRepo
+    ) -> List[Item] | None:
         try:
             response = await item_repo.get_items(offset, limit)
             return response
         except Exception as e:
             logger.error(f"Error of getting all items: {e}")
-
 
     @staticmethod
     async def update_item_data(update_item: Item, item_repo: ItemRepo) -> Item | None:
@@ -57,7 +55,6 @@ class ItemApplications:
         except Exception as e:
             await item_repo.rollback()
             logger.error(f"Error of updating item: {e}")
-
 
     @staticmethod
     async def delete_item(item_id: int, item_repo: ItemRepo) -> bool | None:

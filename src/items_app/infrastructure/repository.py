@@ -24,7 +24,7 @@ class ItemRepo:
 
     async def get_item_by_id(self, item_id: int) -> Item | None:
         try:
-            stmt = select(Item).where(Item.id==item_id)
+            stmt = select(Item).where(Item.id == item_id)
             cursor = await self._session.execute(stmt)
             result = cursor.scalar_one_or_none()
             return result
@@ -62,7 +62,7 @@ class ItemRepo:
             if not current_item:
                 return None
             else:
-                stmt = delete(Item).where(Item.id==item_id)
+                stmt = delete(Item).where(Item.id == item_id)
                 await self._session.execute(stmt)
                 return True
         except SQLAlchemyError as e:

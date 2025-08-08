@@ -1,5 +1,4 @@
 from pydantic import BaseModel, ConfigDict
-from items_app.infrastructure.models import Item
 
 
 class ItemCreate(BaseModel):

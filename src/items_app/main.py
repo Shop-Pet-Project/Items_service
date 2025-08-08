@@ -1,13 +1,15 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 import uvicorn
 from items_app.api.routers import router
 
 
 app = FastAPI()
 
+
 @app.get("/healthy", summary="Проверка работы приложения", tags=["Healthcheck"])
 async def healthcheck():
     return "Server is running"
+
 
 app.include_router(router)
 
