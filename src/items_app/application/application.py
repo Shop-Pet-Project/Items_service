@@ -39,10 +39,7 @@ class ItemApplications:
     async def fetch_all_items(offset: int, limit: int, item_repo: ItemRepo) -> List[Item] | None:
         try:
             response = await item_repo.get_items(offset, limit)
-            if not response:
-                raise ItemNotFound(f"No items was found")
-            else:
-                return response
+            return response
         except Exception as e:
             logger.error(f"Error of getting all items: {e}")
 

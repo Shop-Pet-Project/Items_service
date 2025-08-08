@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Optional, Union, Dict
 from fastapi import APIRouter, Depends, HTTPException
 from items_app.api.providers import get_item_repo
 from items_app.api.schemas import ItemCreate, ItemResponse
@@ -46,7 +46,7 @@ async def get_item_by_id(
         raise HTTPException(status_code=500, detail="Failed to fetch item")
 
 
-@router.get("", summary="Вывод всех заметок", response_model=List[ItemResponse])
+@router.get("", summary="Вывод всех заметок", response_model=Union[List[ItemResponse], Dict])
 async def get_all_items(
         item_repo: Annotated[ItemRepo, Depends(get_item_repo)],
         offset: Optional[int] = 0,
@@ -58,10 +58,7 @@ async def get_all_items(
             item_response = [ItemResponse.model_validate(item) for item in items]
             return item_response
         else:
-            return []
-    except ItemNotFound as e:
-        logger.error(f"Error: {e}")
-        raise HTTPException(status_code=404, detail=str(e))
+            return {"message": "No items in database"}
     except Exception as e:
         logger.error(f"Unexpected error: {type(e).__name__} - {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch items")

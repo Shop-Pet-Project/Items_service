@@ -36,13 +36,13 @@ async def client():
 
 @pytest.mark.asyncio
 async def test_healthcheck(client):
-    response = await client.get("/")
+    response = await client.get("/healthy")
     assert response.status_code == 200
     assert response.json() == "Server is running"
 
 @pytest.mark.asyncio
 async def test_create_item(client):
-    response = await client.post("/item", json={"title": "Candy", "price": 0.45})
+    response = await client.post("/items", json={"title": "Candy", "price": 0.45})
     assert response.status_code == 200
     assert response.json() == {
         "message": "New item created successfully",
@@ -52,3 +52,111 @@ async def test_create_item(client):
             "price": 0.45
         }
     }
+
+@pytest.mark.asyncio
+async def test_get_item_by_id(client):
+    response = await client.post("/items", json={"title": "Bombar", "price": 1.99})
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": "New item created successfully",
+        "item": {
+            "id": 2,
+            "title": "Bombar",
+            "price": 1.99
+        }
+    }
+
+    response = await client.get("/items/2")
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": 2,
+        "title": "Bombar",
+        "price": 1.99
+    }
+
+@pytest.mark.asyncio
+async def test_update_item_data_by_id(client):
+    response = await client.post("/items", json={"title": "Cool Cola", "price": 1.45})
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": "New item created successfully",
+        "item": {
+            "id": 3,
+            "title": "Cool Cola",
+            "price": 1.45
+        }
+    }
+
+    response = await client.get("/items/3")
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": 3,
+        "title": "Cool Cola",
+        "price": 1.45
+    }
+
+    response = await client.put("/items/3", json={"title": "Coca Cola", "price": 4.99})
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": "Item updated successfully",
+        "item": {
+            "id": 3,
+            "title": "Coca Cola",
+            "price": 4.99
+        }
+    }
+
+    response = await client.get("/items/3")
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": 3,
+        "title": "Coca Cola",
+        "price": 4.99
+    }
+
+@pytest.mark.asyncio
+async def test_delete_note_by_id(client):
+    response = await client.get("/items/3")
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": 3,
+        "title": "Coca Cola",
+        "price": 4.99
+    }
+
+    response = await client.delete("/items/3")
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": "Item with item_id=3 was deleted"
+    }
+
+    response = await client.get("/items/3")
+    assert response.status_code == 404
+    assert response.json() == {
+        "detail": "Item with item_id=3 not found"
+    }
+
+@pytest.mark.asyncio
+async def test_get_all_items(client):
+    response = await client.get("/items")
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            'id': 1,
+            'price': 0.45,
+            'title': 'Candy',
+        },
+        {
+            'id': 2,
+            'price': 1.99,
+            'title': 'Bombar',
+        },
+    ]
+
+@pytest.mark.asyncio
+async def test_get_all_items_with_empty_db(client):
+    await client.delete("/items/1")
+    await client.delete("/items/2")
+    response = await client.get("/items")
+    assert response.status_code == 200
+    assert response.json() == {"message": "No items in database"}
