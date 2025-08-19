@@ -1,4 +1,5 @@
 import logging
+from uuid import UUID
 from typing import Annotated, List, Optional, Union, Dict
 from fastapi import APIRouter, Depends, HTTPException
 from items_app.api.providers import get_item_repo
@@ -30,7 +31,7 @@ async def create_new_item(
 
 @router.get("/{item_id}", summary="Вывод товара по ID", response_model=ItemResponse)
 async def get_item_by_id(
-    item_id: int, item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
+    item_id: UUID, item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
 ):
     try:
         item = await ItemApplications.fetch_item_by_id(item_id, item_repo)
@@ -45,7 +46,7 @@ async def get_item_by_id(
 
 
 @router.get(
-    "", summary="Вывод всех заметок", response_model=Union[List[ItemResponse], Dict]
+    "", summary="Вывод всех товаров", response_model=Union[List[ItemResponse], Dict]
 )
 async def get_all_items(
     item_repo: Annotated[ItemRepo, Depends(get_item_repo)],
@@ -66,7 +67,7 @@ async def get_all_items(
 
 @router.put("/{item_id}", summary="Изменение товара по ID")
 async def update_item_data_by_id(
-    item_id: int,
+    item_id: UUID,
     update_data: ItemCreate,
     item_repo: Annotated[ItemRepo, Depends(get_item_repo)],
 ):
@@ -89,7 +90,7 @@ async def update_item_data_by_id(
 
 @router.delete("/{item_id}", summary="Удаление товара по ID")
 async def delete_note_by_id(
-    item_id: int, item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
+    item_id: UUID, item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
 ):
     try:
         await ItemApplications.delete_item(item_id, item_repo)

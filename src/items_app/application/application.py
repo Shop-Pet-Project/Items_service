@@ -1,4 +1,5 @@
 import logging
+from uuid import UUID
 from typing import List
 from items_app.application.application_exceptions import ItemNotFound
 from items_app.infrastructure.models import Item
@@ -21,7 +22,7 @@ class ItemApplications:
             raise
 
     @staticmethod
-    async def fetch_item_by_id(item_id: int, item_repo: ItemRepo) -> Item | None:
+    async def fetch_item_by_id(item_id: UUID, item_repo: ItemRepo) -> Item | None:
         try:
             response = await item_repo.get_item_by_id(item_id=item_id)
             if not response:
@@ -57,7 +58,7 @@ class ItemApplications:
             logger.error(f"Error of updating item: {e}")
 
     @staticmethod
-    async def delete_item(item_id: int, item_repo: ItemRepo) -> bool | None:
+    async def delete_item(item_id: UUID, item_repo: ItemRepo) -> bool | None:
         try:
             response = await item_repo.delete_item_by_id(item_id=item_id)
             if not response:

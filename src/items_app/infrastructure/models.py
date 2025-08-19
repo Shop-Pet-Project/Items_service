@@ -1,4 +1,6 @@
+import uuid
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import UUID
 
 
 class Base(DeclarativeBase):
@@ -8,6 +10,8 @@ class Base(DeclarativeBase):
 class Item(Base):
     __tablename__ = "items"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True
+    )
     title: Mapped[str]
     price: Mapped[float]

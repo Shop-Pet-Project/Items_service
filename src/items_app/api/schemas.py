@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel, ConfigDict
 
 
@@ -7,7 +8,7 @@ class ItemCreate(BaseModel):
 
 
 class ItemResponse(BaseModel):
-    id: int
+    id: uuid.UUID
     title: str
     price: float
 
