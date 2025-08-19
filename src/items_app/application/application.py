@@ -42,13 +42,13 @@ class ItemApplications:
             return response
         except Exception as e:
             logger.error(f"Error of getting all items: {e}")
+            raise
 
     @staticmethod
     async def update_item_data(update_item: Item, item_repo: ItemRepo) -> Item | None:
         try:
             response = await item_repo.update_item(updated_item_data=update_item)
             if not response:
-                await item_repo.rollback()
                 raise ItemNotFound(f"No such item with item_id={update_item.id}")
             else:
                 await item_repo.commit()
@@ -56,13 +56,13 @@ class ItemApplications:
         except Exception as e:
             await item_repo.rollback()
             logger.error(f"Error of updating item: {e}")
+            raise
 
     @staticmethod
     async def delete_item(item_id: UUID, item_repo: ItemRepo) -> bool | None:
         try:
             response = await item_repo.delete_item_by_id(item_id=item_id)
             if not response:
-                await item_repo.rollback()
                 raise ItemNotFound(f"No such item with item_id={item_id}")
             else:
                 await item_repo.commit()
@@ -70,3 +70,4 @@ class ItemApplications:
         except Exception as e:
             await item_repo.rollback()
             logger.error(f"Error of deleting item: {e}")
+            raise
