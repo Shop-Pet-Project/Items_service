@@ -39,14 +39,14 @@ class BaseConfig(ABC):
         Формирует URL для подключения к базе данных в приложении.
         """
         return f"{self.DB_ASYNC_DRIVER}://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
-    
+
     @property
     def ALEMBIC_DB_URL(self) -> str:
         """
         Формирует URL для Alembic.
         """
         return f"{self.DB_SYNC_DRIVER}://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
-    
+
 
 class DevelopmentConfig(BaseConfig):
     """

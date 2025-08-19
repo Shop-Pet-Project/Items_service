@@ -1,8 +1,9 @@
+from uuid import UUID
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from items_app.infrastructure.models import Item
-from typing import List
+from typing import List, Optional
 import logging
 
 
@@ -22,7 +23,7 @@ class ItemRepo:
             logger.error(f"Error of adding item: {e}")
             return None
 
-    async def get_item_by_id(self, item_id: int) -> Item | None:
+    async def get_item_by_id(self, item_id: UUID) -> Item | None:
         try:
             stmt = select(Item).where(Item.id == item_id)
             cursor = await self._session.execute(stmt)
@@ -32,7 +33,9 @@ class ItemRepo:
             logger.error(f"Error of getting item: {e}")
             return None
 
-    async def get_items(self, offset: int = 0, limit: int = 10) -> List[Item] | None:
+    async def get_items(
+        self, offset: Optional[int] = 0, limit: Optional[int] = 10
+    ) -> List[Item] | None:
         try:
             stmt = select(Item).offset(offset).limit(limit)
             cursor = await self._session.execute(stmt)
@@ -56,7 +59,7 @@ class ItemRepo:
             logger.error(f"Error of updating item: {e}")
             return None
 
-    async def delete_item_by_id(self, item_id: int) -> bool | None:
+    async def delete_item_by_id(self, item_id: UUID) -> bool | None:
         try:
             current_item = await self.get_item_by_id(item_id)
             if not current_item:

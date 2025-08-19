@@ -24,6 +24,7 @@ async def override_get_session():
     async with TestingSessionLocal() as session:
         yield session
 
+
 app.dependency_overrides[get_session] = override_get_session
 
 
@@ -66,10 +67,9 @@ async def test_create_item(client):
     assert data["message"] == "New item created successfully"
 
     item_id = data["item"]["id"]
-    uuid_obj = uuid.UUID(item_id)
+    assert uuid.UUID(item_id).version == 4
     assert data["item"]["title"] == "Candy"
     assert data["item"]["price"] == 0.45
-
 
 
 @pytest.mark.asyncio
@@ -87,10 +87,14 @@ async def test_get_item_by_id(client):
 
 @pytest.mark.asyncio
 async def test_update_item_data_by_id(client):
-    create_resp = await client.post("/items", json={"title": "Cool Cola", "price": 1.45})
+    create_resp = await client.post(
+        "/items", json={"title": "Cool Cola", "price": 1.45}
+    )
     item_id = create_resp.json()["item"]["id"]
 
-    update_resp = await client.put(f"/items/{item_id}", json={"title": "Coca Cola", "price": 4.99})
+    update_resp = await client.put(
+        f"/items/{item_id}", json={"title": "Coca Cola", "price": 4.99}
+    )
     assert update_resp.status_code == 200
     upd_data = update_resp.json()
     assert upd_data["item"]["title"] == "Coca Cola"
@@ -98,7 +102,6 @@ async def test_update_item_data_by_id(client):
 
     get_resp = await client.get(f"/items/{item_id}")
     assert get_resp.json()["title"] == "Coca Cola"
-
 
 
 @pytest.mark.asyncio
@@ -112,7 +115,6 @@ async def test_delete_item_by_id(client):
 
     get_resp = await client.get(f"/items/{item_id}")
     assert get_resp.status_code == 404
-
 
 
 @pytest.mark.asyncio
@@ -132,4 +134,3 @@ async def test_get_all_items_with_empty_db(client):
     resp = await client.get("/items")
     data = resp.json()
     assert data == {"message": "No items in database"}
-

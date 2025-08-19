@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 from items_app.application.application import ItemApplications
 from items_app.application.application_exceptions import ItemNotFound
 
+
 @pytest.mark.asyncio
 async def test_create_item_success():
     repo = AsyncMock()
@@ -15,6 +16,7 @@ async def test_create_item_success():
     repo.add_item.assert_awaited_once_with(item_data=item)
     repo.commit.assert_awaited_once()
     assert result is item
+
 
 @pytest.mark.asyncio
 async def test_create_item_failure_rolls_back():
@@ -28,6 +30,7 @@ async def test_create_item_failure_rolls_back():
     repo.rollback.assert_awaited_once()
     repo.commit.assert_not_called()
 
+
 @pytest.mark.asyncio
 async def test_fetch_item_by_id_found():
     repo = AsyncMock()
@@ -40,6 +43,7 @@ async def test_fetch_item_by_id_found():
     repo.get_item_by_id.assert_awaited_once_with(item_id=item_id)
     assert result is fake_item
 
+
 @pytest.mark.asyncio
 async def test_fetch_item_by_id_not_found():
     repo = AsyncMock()
@@ -48,6 +52,7 @@ async def test_fetch_item_by_id_not_found():
 
     with pytest.raises(ItemNotFound):
         await ItemApplications.fetch_item_by_id(item_id, repo)
+
 
 @pytest.mark.asyncio
 async def test_fetch_all_items_success():
@@ -59,6 +64,7 @@ async def test_fetch_all_items_success():
 
     repo.get_items.assert_awaited_once_with(0, 10)
     assert result == items
+
 
 @pytest.mark.asyncio
 async def test_update_item_data_success():
@@ -72,6 +78,7 @@ async def test_update_item_data_success():
     repo.commit.assert_awaited_once()
     assert result is item
 
+
 @pytest.mark.asyncio
 async def test_update_item_data_not_found():
     repo = AsyncMock()
@@ -82,6 +89,7 @@ async def test_update_item_data_not_found():
         await ItemApplications.update_item_data(item, repo)
 
     repo.rollback.assert_awaited_once()
+
 
 @pytest.mark.asyncio
 async def test_delete_item_success():
@@ -94,6 +102,7 @@ async def test_delete_item_success():
     repo.delete_item_by_id.assert_awaited_once_with(item_id=item_id)
     repo.commit.assert_awaited_once()
     assert result is True
+
 
 @pytest.mark.asyncio
 async def test_delete_item_not_found():

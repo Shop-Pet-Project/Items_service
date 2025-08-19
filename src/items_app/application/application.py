@@ -1,6 +1,6 @@
 import logging
 from uuid import UUID
-from typing import List
+from typing import List, Optional
 from items_app.application.application_exceptions import ItemNotFound
 from items_app.infrastructure.models import Item
 from items_app.infrastructure.repository import ItemRepo
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class ItemApplications:
     @staticmethod
-    async def create_item(new_item: Item, item_repo: ItemRepo) -> Item:
+    async def create_item(new_item: Item, item_repo: ItemRepo) -> Optional[Item]:
         try:
             created_item = await item_repo.add_item(item_data=new_item)
             await item_repo.commit()
@@ -35,7 +35,7 @@ class ItemApplications:
 
     @staticmethod
     async def fetch_all_items(
-        offset: int, limit: int, item_repo: ItemRepo
+        offset: Optional[int], limit: Optional[int], item_repo: ItemRepo
     ) -> List[Item] | None:
         try:
             response = await item_repo.get_items(offset, limit)
