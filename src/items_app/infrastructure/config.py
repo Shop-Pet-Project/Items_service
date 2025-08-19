@@ -36,7 +36,7 @@ class BaseConfig(ABC):
     @property
     def DB_URL(self) -> str:
         """
-        Формирует URL для подключения к базе данных.
+        Формирует URL для подключения к базе данных в приложении.
         """
         return f"{self.DB_ASYNC_DRIVER}://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
     
@@ -54,7 +54,12 @@ class DevelopmentConfig(BaseConfig):
     Использует локальную базу данных PostgreSQL.
     """
 
-    DB_HOST: str = "localhost"
+    @property
+    def DB_HOST(self) -> str:
+        """
+        Возвращает хост базы данных для локальной разработки.
+        """
+        return "localhost"
 
 
 class DockerConfig(BaseConfig):
@@ -63,7 +68,12 @@ class DockerConfig(BaseConfig):
     Использует базу данных PostgreSQL, запущенную в Docker-контейнере.
     """
 
-    DB_HOST: str = "postgres"
+    @property
+    def DB_HOST(self) -> str:
+        """
+        Возвращает хост базы данных для Docker-контейнера.
+        """
+        return "postgres"
 
 
 config = DevelopmentConfig() if ENV_MODE == "development" else DockerConfig()
