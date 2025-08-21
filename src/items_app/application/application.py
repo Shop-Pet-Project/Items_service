@@ -71,3 +71,17 @@ class ItemApplications:
             await item_repo.rollback()
             logger.error(f"Error of deleting item: {e}")
             raise
+
+    @staticmethod
+    async def delete_items(item_ids: List[UUID], item_repo: ItemRepo) -> bool | None:
+        try:
+            response = await item_repo.delete_items_by_ids(item_ids=item_ids)
+            if not response:
+                raise ItemNotFound(f"No items found with item_ids={item_ids}")
+            else:
+                await item_repo.commit()
+                return True
+        except Exception as e:
+            await item_repo.rollback()
+            logger.error(f"Error of deleting items: {e}")
+            raise

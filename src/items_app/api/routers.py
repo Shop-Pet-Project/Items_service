@@ -3,7 +3,7 @@ from uuid import UUID
 from typing import Annotated, List, Optional, Union, Dict
 from fastapi import APIRouter, Depends, HTTPException
 from items_app.api.providers import get_item_repo
-from items_app.api.schemas import ItemCreate, ItemResponse
+from items_app.api.schemas import ItemCreate, ItemResponse, ItemsIdList
 from items_app.application.application import ItemApplications
 from items_app.application.application_exceptions import ItemNotFound
 from items_app.infrastructure.models import Item
@@ -86,6 +86,22 @@ async def update_item_data_by_id(
     except Exception as e:
         logger.error(f"Unexpected error: {type(e).__name__} - {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to update item")
+
+
+@router.delete("/delete-many", summary="Удаление нескольких товаров по ID")
+async def delete_items_by_ids(
+    item_ids: ItemsIdList, item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
+):
+    try:
+        item_ids_list = [item_id for item_id in item_ids.item_ids]
+        await ItemApplications.delete_items(item_ids_list, item_repo)
+        return {"message": f"Items with IDs {item_ids} were deleted"}
+    except ItemNotFound as e:
+        logger.error(f"Error: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Unexpected error: {type(e).__name__} - {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to delete items")
 
 
 @router.delete("/{item_id}", summary="Удаление товара по ID")

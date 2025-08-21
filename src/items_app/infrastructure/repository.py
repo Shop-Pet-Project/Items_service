@@ -72,6 +72,16 @@ class ItemRepo:
             await self._session.rollback()
             logger.error(f"Error of deleting item: {e}")
             return None
+        
+    async def delete_items_by_ids(self, item_ids: List[UUID]) -> bool | None:
+        try:
+            stmt = delete(Item).where(Item.id.in_(item_ids))
+            await self._session.execute(stmt)
+            return True
+        except SQLAlchemyError as e:
+            await self._session.rollback()
+            logger.error(f"Error of deleting items: {e}")
+            return None
 
     async def commit(self) -> None:
         try:

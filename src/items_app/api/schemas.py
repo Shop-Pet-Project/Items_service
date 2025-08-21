@@ -13,3 +13,9 @@ class ItemResponse(BaseModel):
     price: float
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ItemsIdList(BaseModel):
+    item_ids: list[uuid.UUID]
+
+    model_config = ConfigDict(from_attributes=True)
