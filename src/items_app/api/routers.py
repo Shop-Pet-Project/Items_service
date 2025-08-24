@@ -36,7 +36,9 @@ async def create_new_item(
 )
 async def get_items_by_ids_get(
     item_repo: Annotated[ItemRepo, Depends(get_item_repo)],
-    item_ids: List[UUID] = Query(description="Список UUID товаров"),
+    item_ids: Optional[List[UUID]] = Query(
+        default=None, description="Список UUID товаров"
+    ),
 ):
     if not item_ids:
         raise HTTPException(status_code=422, detail="Empty list of item IDs provided")

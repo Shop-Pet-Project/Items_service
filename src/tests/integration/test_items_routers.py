@@ -104,6 +104,92 @@ async def test_get_item_by_invalid_id(client):
 
 
 @pytest.mark.asyncio
+async def test_get_many_get_success(client):
+    resp1 = await client.post("/items", json={"title": "Item1", "price": 5.0})
+    resp2 = await client.post("/items", json={"title": "Item2", "price": 10.0})
+    id1 = resp1.json()["item"]["id"]
+    id2 = resp2.json()["item"]["id"]
+
+    resp = await client.get(f"/items/get-many?item_ids={id1}&item_ids={id2}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    assert {item["id"] for item in data} == {id1, id2}
+
+
+@pytest.mark.asyncio
+async def test_get_many_get_empty_list(client):
+    resp = await client.get("/items/get-many")
+    assert resp.status_code == 422
+    assert resp.json()["detail"] == "Empty list of item IDs provided"
+
+
+@pytest.mark.asyncio
+async def test_get_many_get_all_invalid_ids(client):
+    id1 = str(uuid.uuid4())
+    id2 = str(uuid.uuid4())
+
+    resp = await client.get(f"/items/get-many?item_ids={id1}&item_ids={id2}")
+    assert resp.status_code == 404
+    assert "No items found" in resp.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_get_many_get_partial_invalid_ids(client):
+    resp_valid = await client.post("/items", json={"title": "ValidItem", "price": 7.5})
+    valid_id = resp_valid.json()["item"]["id"]
+    invalid_id = str(uuid.uuid4())
+
+    resp = await client.get(
+        f"/items/get-many?item_ids={valid_id}&item_ids={invalid_id}"
+    )
+    assert resp.status_code == 404
+    assert invalid_id in resp.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_get_many_post_success(client):
+    resp1 = await client.post("/items", json={"title": "PostItem1", "price": 5.0})
+    resp2 = await client.post("/items", json={"title": "PostItem2", "price": 10.0})
+    id1 = resp1.json()["item"]["id"]
+    id2 = resp2.json()["item"]["id"]
+
+    payload = {"item_ids": [id1, id2]}
+    resp = await client.post("/items/get-many", content=json.dumps(payload))
+    assert resp.status_code == 200
+    data = resp.json()
+    assert {item["id"] for item in data} == {id1, id2}
+
+
+@pytest.mark.asyncio
+async def test_get_many_post_empty_list(client):
+    payload = {"item_ids": []}
+    resp = await client.post("/items/get-many", content=json.dumps(payload))
+    assert resp.status_code == 422
+    assert resp.json()["detail"] == "Empty list of item IDs provided"
+
+
+@pytest.mark.asyncio
+async def test_get_many_post_all_invalid_ids(client):
+    payload = {"item_ids": [str(uuid.uuid4()), str(uuid.uuid4())]}
+    resp = await client.post("/items/get-many", content=json.dumps(payload))
+    assert resp.status_code == 404
+    assert "No items found" in resp.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_get_many_post_partial_invalid_ids(client):
+    resp_valid = await client.post("/items", json={"title": "PostValid", "price": 8.0})
+    valid_id = resp_valid.json()["item"]["id"]
+    invalid_id = str(uuid.uuid4())
+
+    payload = {"item_ids": [valid_id, invalid_id]}
+    resp = await client.post("/items/get-many", content=json.dumps(payload))
+    assert resp.status_code == 404
+    assert invalid_id in resp.json()["detail"]
+
+
+@pytest.mark.asyncio
 async def test_get_all_items(client):
     await client.post("/items", json={"title": "Candy", "price": 0.45})
     await client.post("/items", json={"title": "Bombar", "price": 1.99})
