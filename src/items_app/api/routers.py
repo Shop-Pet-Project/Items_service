@@ -1,7 +1,7 @@
 import logging
 from uuid import UUID
 from typing import Annotated, List, Optional, Union, Dict
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from items_app.api.providers import get_item_repo
 from items_app.api.schemas import ItemCreate, ItemResponse, ItemsIdList
 from items_app.application.application import ItemApplications
@@ -29,6 +29,34 @@ async def create_new_item(
         raise HTTPException(status_code=500, detail="Failed to create item")
 
 
+@router.get(
+    "/get-many",
+    summary="Вывод нескольких товаров по ID (GET) для небольших списков",
+    response_model=List[ItemResponse],
+)
+async def get_items_by_ids_get(
+    item_repo: Annotated[ItemRepo, Depends(get_item_repo)],
+    item_ids: List[UUID] = Query(description="Список UUID товаров"),
+):
+    if not item_ids:
+        raise HTTPException(status_code=422, detail="Empty list of item IDs provided")
+
+    try:
+        items = await ItemApplications.fetch_items_by_ids(item_ids, item_repo)
+        if not items:
+            raise ItemNotFound("No items found for the provided IDs")
+        item_response = [ItemResponse.model_validate(item) for item in items]
+        return item_response
+    except ItemNotFound as e:
+        logger.error(f"Error: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch items")
+
+
 @router.get("/{item_id}", summary="Вывод товара по ID", response_model=ItemResponse)
 async def get_item_by_id(
     item_id: UUID, item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
@@ -43,6 +71,33 @@ async def get_item_by_id(
     except Exception as e:
         logger.error(f"Unexpected error: {type(e).__name__} - {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch item")
+
+
+@router.post(
+    "/get-many",
+    summary="Вывод нескольких товаров по ID (POST) для больших списков",
+    response_model=List[ItemResponse],
+)
+async def get_items_by_ids_post(
+    item_ids: ItemsIdList, item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
+):
+    if not item_ids.item_ids:
+        raise HTTPException(status_code=422, detail="Empty list of item IDs provided")
+
+    try:
+        items = await ItemApplications.fetch_items_by_ids(item_ids.item_ids, item_repo)
+        if not items:
+            raise ItemNotFound("No items found for the provided IDs")
+        item_response = [ItemResponse.model_validate(item) for item in items]
+        return item_response
+    except ItemNotFound as e:
+        logger.error(f"Error: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch items")
 
 
 @router.get(
