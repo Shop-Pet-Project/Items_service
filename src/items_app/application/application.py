@@ -75,12 +75,21 @@ class ItemApplications:
     @staticmethod
     async def delete_items(item_ids: List[UUID], item_repo: ItemRepo) -> bool | None:
         try:
-            response = await item_repo.delete_items_by_ids(item_ids=item_ids)
-            if not response:
-                raise ItemNotFound(f"No items found with item_ids={item_ids}")
-            else:
-                await item_repo.commit()
-                return True
+            existing_ids = await item_repo.get_items_by_ids(item_ids=item_ids)
+            if not existing_ids or len(existing_ids) != len(item_ids):
+                existing_ids_set = (
+                    {item.id for item in existing_ids} if existing_ids else set()
+                )
+                missing_ids = [
+                    str(item_id)
+                    for item_id in item_ids
+                    if item_id not in existing_ids_set
+                ]
+                raise ItemNotFound(f"No items found with IDs {', '.join(missing_ids)}")
+
+            await item_repo.delete_items_by_ids(item_ids=item_ids)
+            await item_repo.commit()
+            return True
         except Exception as e:
             await item_repo.rollback()
             logger.error(f"Error of deleting items: {e}")

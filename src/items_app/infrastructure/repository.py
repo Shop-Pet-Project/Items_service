@@ -33,6 +33,16 @@ class ItemRepo:
             logger.error(f"Error of getting item: {e}")
             return None
 
+    async def get_items_by_ids(self, item_ids: List[UUID]) -> List[Item] | None:
+        try:
+            stmt = select(Item).where(Item.id.in_(item_ids))
+            cursor = await self._session.execute(stmt)
+            result = list(cursor.scalars().all())
+            return result or None
+        except SQLAlchemyError as e:
+            logger.error(f"Error of getting items by ids: {e}")
+            return None
+
     async def get_items(
         self, offset: Optional[int] = 0, limit: Optional[int] = 10
     ) -> List[Item] | None:
@@ -72,12 +82,12 @@ class ItemRepo:
             await self._session.rollback()
             logger.error(f"Error of deleting item: {e}")
             return None
-        
-    async def delete_items_by_ids(self, item_ids: List[UUID]) -> bool | None:
+
+    async def delete_items_by_ids(self, item_ids: List[UUID]) -> int | None:
         try:
             stmt = delete(Item).where(Item.id.in_(item_ids))
-            await self._session.execute(stmt)
-            return True
+            result = await self._session.execute(stmt)
+            return result.rowcount or None
         except SQLAlchemyError as e:
             await self._session.rollback()
             logger.error(f"Error of deleting items: {e}")

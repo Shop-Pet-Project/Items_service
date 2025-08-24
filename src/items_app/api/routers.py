@@ -93,19 +93,26 @@ async def delete_items_by_ids(
     item_ids: ItemsIdList, item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
 ):
     try:
+        if not item_ids.item_ids:
+            raise HTTPException(
+                status_code=422, detail="Empty list of item IDs provided"
+            )
         item_ids_list = [item_id for item_id in item_ids.item_ids]
         await ItemApplications.delete_items(item_ids_list, item_repo)
-        return {"message": f"Items with IDs {item_ids} were deleted"}
+        item_ids_str = ", ".join(str(item_id) for item_id in item_ids_list)
+        return {"message": f"Items with IDs [{item_ids_str}] have been deleted"}
     except ItemNotFound as e:
         logger.error(f"Error: {e}")
         raise HTTPException(status_code=404, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Unexpected error: {type(e).__name__} - {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to delete items")
 
 
 @router.delete("/{item_id}", summary="Удаление товара по ID")
-async def delete_note_by_id(
+async def delete_item_by_id(
     item_id: UUID, item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
 ):
     try:

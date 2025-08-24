@@ -114,3 +114,29 @@ async def test_delete_item_not_found():
         await ItemApplications.delete_item(item_id, repo)
 
     repo.rollback.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_delete_items_success():
+    repo = AsyncMock()
+    item_ids = [uuid4(), uuid4(), uuid4()]
+    repo.get_items_by_ids.return_value = [MagicMock(id=item_id) for item_id in item_ids]
+    repo.delete_items_by_ids.return_value = True
+
+    result = await ItemApplications.delete_items(item_ids, repo)
+
+    repo.delete_items_by_ids.assert_awaited_once_with(item_ids=item_ids)
+    repo.commit.assert_awaited_once()
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_delete_items_not_found():
+    repo = AsyncMock()
+    item_ids = [uuid4(), uuid4(), uuid4()]
+    repo.delete_items_by_ids.return_value = None
+
+    with pytest.raises(ItemNotFound):
+        await ItemApplications.delete_items(item_ids, repo)
+
+    repo.rollback.assert_awaited_once()
