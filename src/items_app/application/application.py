@@ -34,6 +34,39 @@ class ItemApplications:
             raise
 
     @staticmethod
+    async def get_missing_ids(
+        existing_items: Optional[List[Item]], item_ids: List[UUID]
+    ) -> List[str]:
+        try:
+            existing_items_set = (
+                {item.id for item in existing_items} if existing_items else set()
+            )
+            missing_ids = [
+                str(item_id)
+                for item_id in item_ids
+                if item_id not in existing_items_set
+            ]
+            return missing_ids
+        except Exception as e:
+            logger.error(f"Error of getting existing and missing ids: {e}")
+            raise
+
+    @staticmethod
+    async def fetch_items_by_ids(
+        item_ids: List[UUID], item_repo: ItemRepo
+    ) -> List[Item] | None:
+        try:
+            response = await item_repo.get_items_by_ids(item_ids=item_ids)
+            if not response or len(response) != len(item_ids):
+                missing_ids = await ItemApplications.get_missing_ids(response, item_ids)
+                raise ItemNotFound(f"No items found with IDs {', '.join(missing_ids)}")
+            else:
+                return response
+        except Exception as e:
+            logger.error(f"Error of getting items by ids: {e}")
+            raise
+
+    @staticmethod
     async def fetch_all_items(
         offset: Optional[int], limit: Optional[int], item_repo: ItemRepo
     ) -> List[Item] | None:
@@ -75,16 +108,11 @@ class ItemApplications:
     @staticmethod
     async def delete_items(item_ids: List[UUID], item_repo: ItemRepo) -> bool | None:
         try:
-            existing_ids = await item_repo.get_items_by_ids(item_ids=item_ids)
-            if not existing_ids or len(existing_ids) != len(item_ids):
-                existing_ids_set = (
-                    {item.id for item in existing_ids} if existing_ids else set()
+            existing_items = await item_repo.get_items_by_ids(item_ids=item_ids)
+            if not existing_items or len(existing_items) != len(item_ids):
+                missing_ids = await ItemApplications.get_missing_ids(
+                    existing_items, item_ids
                 )
-                missing_ids = [
-                    str(item_id)
-                    for item_id in item_ids
-                    if item_id not in existing_ids_set
-                ]
                 raise ItemNotFound(f"No items found with IDs {', '.join(missing_ids)}")
 
             await item_repo.delete_items_by_ids(item_ids=item_ids)
