@@ -37,6 +37,7 @@ class ItemApplications:
     async def get_missing_ids(
         existing_items: Optional[List[Item]], item_ids: List[UUID]
     ) -> List[str]:
+        """Метод для получения списка отсутствующих ID товаров из запрошенного списка."""
         try:
             existing_items_set = (
                 {item.id for item in existing_items} if existing_items else set()

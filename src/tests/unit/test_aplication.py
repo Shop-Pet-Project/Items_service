@@ -55,6 +55,56 @@ async def test_fetch_item_by_id_not_found():
 
 
 @pytest.mark.asyncio
+async def test_fetch_items_by_ids_all_found():
+    ids = [uuid4(), uuid4()]
+    mock_repo = AsyncMock()
+    fake_items = [
+        MagicMock(id=ids[0], title="Item1", price=10.0),
+        MagicMock(id=ids[1], title="Item2", price=20.0),
+    ]
+    mock_repo.get_items_by_ids.return_value = fake_items
+
+    result = await ItemApplications.fetch_items_by_ids(ids, mock_repo)
+
+    assert result == fake_items
+    mock_repo.get_items_by_ids.assert_awaited_once_with(item_ids=ids)
+
+
+@pytest.mark.asyncio
+async def test_fetch_items_by_ids_none_found_raises():
+    ids = [uuid4(), uuid4()]
+    mock_repo = AsyncMock()
+    mock_repo.get_items_by_ids.return_value = []
+
+    with pytest.raises(ItemNotFound) as exc:
+        await ItemApplications.fetch_items_by_ids(ids, mock_repo)
+    assert "No items found" in str(exc.value)
+
+
+@pytest.mark.asyncio
+async def test_fetch_items_by_ids_partial_found_raises():
+    ids = [uuid4(), uuid4()]
+    mock_repo = AsyncMock()
+    found_items = [MagicMock(id=ids[0], title="OnlyOne", price=5.0)]
+    mock_repo.get_items_by_ids.return_value = found_items
+    missing_ids = [str(ids[1])]
+    ItemApplications.get_missing_ids = AsyncMock(return_value=missing_ids)
+
+    with pytest.raises(ItemNotFound) as exc:
+        await ItemApplications.fetch_items_by_ids(ids, mock_repo)
+    assert str(ids[1]) in str(exc.value)
+
+
+@pytest.mark.asyncio
+async def test_fetch_items_by_ids_empty_input():
+    mock_repo = AsyncMock()
+    mock_repo.get_items_by_ids.return_value = []
+
+    with pytest.raises(ItemNotFound):
+        await ItemApplications.fetch_items_by_ids([], mock_repo)
+
+
+@pytest.mark.asyncio
 async def test_fetch_all_items_success():
     repo = AsyncMock()
     items = [MagicMock(), MagicMock()]
