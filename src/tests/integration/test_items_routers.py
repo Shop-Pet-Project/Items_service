@@ -3,22 +3,12 @@ import json
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlalchemy.pool import StaticPool
 from sqlalchemy import insert
 
 from items_app.main import app
 from items_app.api.providers import get_session
 from items_app.infrastructure.models import Base, Company
-
-# --- Настройка тестовой БД ---
-DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-engine = create_async_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-TestingSessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False)
+from tests.integration.conftest import TestingSessionLocal, engine, setup_database  # noqa: F401
 
 
 async def override_get_session():
@@ -30,19 +20,10 @@ app.dependency_overrides[get_session] = override_get_session
 
 
 # --- Фикстуры ---
-@pytest_asyncio.fixture(scope="session", autouse=True)
-async def init_database():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-
-
 @pytest_asyncio.fixture(autouse=True)
 async def cleanup_database():
     async with engine.begin() as conn:
-        for table in reversed(Base.metadata.sorted_tables):
+        for table in Base.metadata.sorted_tables:
             await conn.execute(table.delete())
     yield
 
@@ -64,8 +45,6 @@ async def client():
 
 
 # --- Тесты ---
-
-
 @pytest.mark.asyncio
 async def test_healthcheck(client):
     response = await client.get("/healthy")
