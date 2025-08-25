@@ -20,7 +20,7 @@ async def create_new_item(
     new_item_schema: ItemCreate, item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
 ):
     try:
-        new_item_data = Item(title=new_item_schema.title, price=new_item_schema.price)
+        new_item_data = Item(title=new_item_schema.title, price=new_item_schema.price, company_id=new_item_schema.company_id)
         new_item = await ItemApplications.create_item(new_item_data, item_repo)
         item_response = ItemResponse.model_validate(new_item)
         return {"message": "New item created successfully", "item": item_response}
@@ -130,7 +130,7 @@ async def update_item_data_by_id(
 ):
     try:
         update_item_data = Item(
-            id=item_id, title=update_data.title, price=update_data.price
+            id=item_id, title=update_data.title, price=update_data.price, company_id=update_data.company_id
         )
         updated_item = await ItemApplications.update_item_data(
             update_item_data, item_repo

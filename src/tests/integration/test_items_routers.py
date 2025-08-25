@@ -1,17 +1,17 @@
 import uuid
 import json
-
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
+from sqlalchemy import insert
 
 from items_app.main import app
 from items_app.api.providers import get_session
-from items_app.infrastructure.models import Base
+from items_app.infrastructure.models import Base, Company
 
-
+# --- Настройка тестовой БД ---
 DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 engine = create_async_engine(
     DATABASE_URL,
@@ -28,7 +28,7 @@ async def override_get_session():
 
 app.dependency_overrides[get_session] = override_get_session
 
-
+# --- Фикстуры ---
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def init_database():
     async with engine.begin() as conn:
@@ -47,11 +47,22 @@ async def cleanup_database():
 
 
 @pytest_asyncio.fixture
+async def company_id():
+    async with TestingSessionLocal() as session:
+        comp_id = uuid.uuid4()
+        await session.execute(
+            insert(Company).values(id=comp_id, name="Test Company")
+        )
+        await session.commit()
+        return str(comp_id)
+
+@pytest_asyncio.fixture
 async def client():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
+# --- Тесты ---
 
 @pytest.mark.asyncio
 async def test_healthcheck(client):
@@ -61,8 +72,11 @@ async def test_healthcheck(client):
 
 
 @pytest.mark.asyncio
-async def test_create_item(client):
-    response = await client.post("/items", json={"title": "Candy", "price": 0.45})
+async def test_create_item(client, company_id):
+    response = await client.post(
+        "/items",
+        json={"title": "Candy", "price": 0.45, "company_id": company_id},
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["message"] == "New item created successfully"
@@ -71,11 +85,14 @@ async def test_create_item(client):
     assert uuid.UUID(item_id).version == 4
     assert data["item"]["title"] == "Candy"
     assert data["item"]["price"] == 0.45
+    assert data["item"]["company_id"] == company_id
 
 
 @pytest.mark.asyncio
-async def test_create_item_with_invalid_data(client):
-    resp = await client.post("/items", json={"title": "", "price": -5})
+async def test_create_item_with_invalid_data(client, company_id):
+    resp = await client.post(
+        "/items", json={"title": "", "price": -5, "company_id": company_id}
+    )
     assert resp.status_code == 422
     errors = resp.json()["detail"]
     assert any(error["loc"] == ["body", "title"] for error in errors)
@@ -83,8 +100,10 @@ async def test_create_item_with_invalid_data(client):
 
 
 @pytest.mark.asyncio
-async def test_get_item_by_id(client):
-    create_resp = await client.post("/items", json={"title": "Bombar", "price": 1.99})
+async def test_get_item_by_id(client, company_id):
+    create_resp = await client.post(
+        "/items", json={"title": "Bombar", "price": 1.99, "company_id": company_id}
+    )
     item_id = create_resp.json()["item"]["id"]
 
     get_resp = await client.get(f"/items/{item_id}")
@@ -93,6 +112,7 @@ async def test_get_item_by_id(client):
     assert data["id"] == item_id
     assert data["title"] == "Bombar"
     assert data["price"] == 1.99
+    assert data["company_id"] == company_id
 
 
 @pytest.mark.asyncio
@@ -104,9 +124,13 @@ async def test_get_item_by_invalid_id(client):
 
 
 @pytest.mark.asyncio
-async def test_get_many_get_success(client):
-    resp1 = await client.post("/items", json={"title": "Item1", "price": 5.0})
-    resp2 = await client.post("/items", json={"title": "Item2", "price": 10.0})
+async def test_get_many_get_success(client, company_id):
+    resp1 = await client.post(
+        "/items", json={"title": "Item1", "price": 5.0, "company_id": company_id}
+    )
+    resp2 = await client.post(
+        "/items", json={"title": "Item2", "price": 10.0, "company_id": company_id}
+    )
     id1 = resp1.json()["item"]["id"]
     id2 = resp2.json()["item"]["id"]
 
@@ -135,8 +159,11 @@ async def test_get_many_get_all_invalid_ids(client):
 
 
 @pytest.mark.asyncio
-async def test_get_many_get_partial_invalid_ids(client):
-    resp_valid = await client.post("/items", json={"title": "ValidItem", "price": 7.5})
+async def test_get_many_get_partial_invalid_ids(client, company_id):
+    resp_valid = await client.post(
+        "/items",
+        json={"title": "ValidItem", "price": 7.5, "company_id": company_id},
+    )
     valid_id = resp_valid.json()["item"]["id"]
     invalid_id = str(uuid.uuid4())
 
@@ -148,9 +175,13 @@ async def test_get_many_get_partial_invalid_ids(client):
 
 
 @pytest.mark.asyncio
-async def test_get_many_post_success(client):
-    resp1 = await client.post("/items", json={"title": "PostItem1", "price": 5.0})
-    resp2 = await client.post("/items", json={"title": "PostItem2", "price": 10.0})
+async def test_get_many_post_success(client, company_id):
+    resp1 = await client.post(
+        "/items", json={"title": "PostItem1", "price": 5.0, "company_id": company_id}
+    )
+    resp2 = await client.post(
+        "/items", json={"title": "PostItem2", "price": 10.0, "company_id": company_id}
+    )
     id1 = resp1.json()["item"]["id"]
     id2 = resp2.json()["item"]["id"]
 
@@ -178,8 +209,10 @@ async def test_get_many_post_all_invalid_ids(client):
 
 
 @pytest.mark.asyncio
-async def test_get_many_post_partial_invalid_ids(client):
-    resp_valid = await client.post("/items", json={"title": "PostValid", "price": 8.0})
+async def test_get_many_post_partial_invalid_ids(client, company_id):
+    resp_valid = await client.post(
+        "/items", json={"title": "PostValid", "price": 8.0, "company_id": company_id}
+    )
     valid_id = resp_valid.json()["item"]["id"]
     invalid_id = str(uuid.uuid4())
 
@@ -190,9 +223,13 @@ async def test_get_many_post_partial_invalid_ids(client):
 
 
 @pytest.mark.asyncio
-async def test_get_all_items(client):
-    await client.post("/items", json={"title": "Candy", "price": 0.45})
-    await client.post("/items", json={"title": "Bombar", "price": 1.99})
+async def test_get_all_items(client, company_id):
+    await client.post(
+        "/items", json={"title": "Candy", "price": 0.45, "company_id": company_id}
+    )
+    await client.post(
+        "/items", json={"title": "Bombar", "price": 1.99, "company_id": company_id}
+    )
 
     resp = await client.get("/items")
     assert resp.status_code == 200
@@ -209,14 +246,15 @@ async def test_get_all_items_with_empty_db(client):
 
 
 @pytest.mark.asyncio
-async def test_update_item_data_by_id(client):
+async def test_update_item_data_by_id(client, company_id):
     create_resp = await client.post(
-        "/items", json={"title": "Cool Cola", "price": 1.45}
+        "/items", json={"title": "Cool Cola", "price": 1.45, "company_id": company_id}
     )
     item_id = create_resp.json()["item"]["id"]
 
     update_resp = await client.put(
-        f"/items/{item_id}", json={"title": "Coca Cola", "price": 4.99}
+        f"/items/{item_id}",
+        json={"title": "Coca Cola", "price": 4.99, "company_id": company_id},
     )
     assert update_resp.status_code == 200
     upd_data = update_resp.json()
@@ -228,14 +266,14 @@ async def test_update_item_data_by_id(client):
 
 
 @pytest.mark.asyncio
-async def test_update_item_with_invalid_data(client):
+async def test_update_item_with_invalid_data(client, company_id):
     create_resp = await client.post(
-        "/items", json={"title": "Cool Cola", "price": 1.45}
+        "/items", json={"title": "Cool Cola", "price": 1.45, "company_id": company_id}
     )
     item_id = create_resp.json()["item"]["id"]
 
     update_resp = await client.put(
-        f"/items/{item_id}", json={"title": "", "price": -10}
+        f"/items/{item_id}", json={"title": "", "price": -10, "company_id": company_id}
     )
     assert update_resp.status_code == 422
     errors = update_resp.json()["detail"]
@@ -244,8 +282,10 @@ async def test_update_item_with_invalid_data(client):
 
 
 @pytest.mark.asyncio
-async def test_delete_item_by_id(client):
-    create_resp = await client.post("/items", json={"title": "Temp", "price": 1.0})
+async def test_delete_item_by_id(client, company_id):
+    create_resp = await client.post(
+        "/items", json={"title": "Temp", "price": 1.0, "company_id": company_id}
+    )
     item_id = create_resp.json()["item"]["id"]
 
     del_resp = await client.delete(f"/items/{item_id}")
@@ -265,9 +305,13 @@ async def test_delete_item_by_invalid_id(client):
 
 
 @pytest.mark.asyncio
-async def test_delete_items_by_ids(client):
-    resp1 = await client.post("/items", json={"title": "Item1", "price": 1.0})
-    resp2 = await client.post("/items", json={"title": "Item2", "price": 2.0})
+async def test_delete_items_by_ids(client, company_id):
+    resp1 = await client.post(
+        "/items", json={"title": "Item1", "price": 1.0, "company_id": company_id}
+    )
+    resp2 = await client.post(
+        "/items", json={"title": "Item2", "price": 2.0, "company_id": company_id}
+    )
     id1 = resp1.json()["item"]["id"]
     id2 = resp2.json()["item"]["id"]
 
@@ -312,8 +356,10 @@ async def test_delete_items_with_empty_list(client):
 
 
 @pytest.mark.asyncio
-async def test_delete_items_with_partial_invalid_ids(client):
-    resp = await client.post("/items", json={"title": "ValidItem", "price": 3.0})
+async def test_delete_items_with_partial_invalid_ids(client, company_id):
+    resp = await client.post(
+        "/items", json={"title": "ValidItem", "price": 3.0, "company_id": company_id}
+    )
     valid_id = resp.json()["item"]["id"]
     invalid_id = "123e4567-e89b-12d3-a456-426614174000"
 
