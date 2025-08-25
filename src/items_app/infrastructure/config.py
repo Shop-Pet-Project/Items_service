@@ -19,10 +19,10 @@ class BaseConfig(ABC):
 
     DB_ASYNC_DRIVER: str = "postgresql+asyncpg"
     DB_SYNC_DRIVER: str = "postgresql+psycopg2"
-    DB_USER: str = "unit_test_example_user"
-    DB_PASSWORD: str = "unit_test_example_pass"
+    DB_USER: str = "items_user"
+    DB_PASSWORD: str = "items_password"
     DB_PORT: int = 5432
-    DB_NAME: str = "units_db"
+    DB_NAME: str = "items_db"
 
     @property
     @abstractmethod
