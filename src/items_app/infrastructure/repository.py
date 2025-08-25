@@ -127,6 +127,16 @@ class CompanyRepo:
             logger.error(f"Error of getting company: {e}")
             return None
         
+    async def get_all_companies(self, offset: Optional[int] = 0, limit: Optional[int] = 10) -> List[Company] | None:
+        try:
+            stmt = select(Company).offset(offset).limit(limit)
+            cursor = await self._session.execute(stmt)
+            result = list(cursor.scalars().all())
+            return result or None
+        except SQLAlchemyError as e:
+            logger.error(f"Error of getting companies: {e}")
+            return None
+        
     async def update_company_data(self, updated_company_data: Company) -> Company | None:
         try:
             current_company = await self.get_company_by_id(updated_company_data.id)

@@ -1,9 +1,9 @@
 import logging
 from uuid import UUID
 from typing import List, Optional
-from items_app.application.application_exceptions import ItemNotFound
-from items_app.infrastructure.models import Item
-from items_app.infrastructure.repository import ItemRepo
+from items_app.application.application_exceptions import ItemNotFound, CompanyNotFound
+from items_app.infrastructure.models import Item, Company
+from items_app.infrastructure.repository import ItemRepo, CompanyRepo
 
 
 logger = logging.getLogger(__name__)
@@ -122,4 +122,76 @@ class ItemApplications:
         except Exception as e:
             await item_repo.rollback()
             logger.error(f"Error of deleting items: {e}")
+            raise
+
+
+class CompanyApplications:
+    @staticmethod
+    async def create_company(
+        new_company: Company, company_repo: CompanyRepo
+    ) -> Optional[Company]:
+        try:
+            created_company = await company_repo.add_company(company_data=new_company)
+            await company_repo.commit()
+            return created_company
+        except Exception as e:
+            await company_repo.rollback()
+            logger.error(f"Error of creating company: {e}")
+            raise
+
+    @staticmethod
+    async def fetch_company_by_id(
+        company_id: UUID, company_repo: CompanyRepo
+    ) -> Company | None:
+        try:
+            response = await company_repo.get_company_by_id(company_id=company_id)
+            if not response:
+                raise CompanyNotFound(f"Company with company_id={company_id} not found")
+            else:
+                return response
+        except Exception as e:
+            logger.error(f"Error of getting company by id: {e}")
+            raise
+    
+    @staticmethod
+    async def fetch_all_companies(
+        offset: Optional[int], limit: Optional[int], company_repo: CompanyRepo
+    ) -> List[Company] | None:
+        try:
+            response = await company_repo.get_companies(offset, limit)
+            return response
+        except Exception as e:
+            logger.error(f"Error of getting all companies: {e}")
+            raise
+
+    @staticmethod
+    async def update_company_data(
+        update_company: Company, company_repo: CompanyRepo
+    ) -> Company | None:
+        try:
+            response = await company_repo.update_company_data(
+                updated_company_data=update_company
+            )
+            if not response:
+                raise CompanyNotFound(f"No such company with company_id={update_company.id}")
+            else:
+                await company_repo.commit()
+                return response
+        except Exception as e:
+            await company_repo.rollback()
+            logger.error(f"Error of updating company: {e}")
+            raise
+
+    @staticmethod
+    async def delete_company(company_id: UUID, company_repo: CompanyRepo) -> bool | None:
+        try:
+            response = await company_repo.remove_company_by_id(company_id=company_id)
+            if not response:
+                raise CompanyNotFound(f"No such company with company_id={company_id}")
+            else:
+                await company_repo.commit()
+                return True
+        except Exception as e:
+            await company_repo.rollback()
+            logger.error(f"Error of deleting company: {e}")
             raise
