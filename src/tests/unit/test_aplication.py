@@ -5,6 +5,8 @@ from items_app.application.application import ItemApplications, CompanyApplicati
 from items_app.application.application_exceptions import ItemNotFound, CompanyNotFound
 
 """ Тесты для ItemsApplications. """
+
+
 @pytest.mark.asyncio
 async def test_create_item_success():
     repo = AsyncMock()
@@ -111,7 +113,9 @@ async def test_fetch_items_of_company_by_company_id_found():
     fake_items = [MagicMock(), MagicMock()]
     repo.get_items_by_company_id.return_value = fake_items
 
-    result = await ItemApplications.fetch_items_of_company_by_company_id(company_id, repo)
+    result = await ItemApplications.fetch_items_of_company_by_company_id(
+        company_id, repo
+    )
 
     repo.get_items_by_company_id.assert_awaited_once_with(company_id=company_id)
     assert result == fake_items
@@ -216,6 +220,8 @@ async def test_delete_items_not_found():
 
 
 """ Тесты для CompanyApplications. """
+
+
 @pytest.mark.asyncio
 async def test_create_company_success():
     repo = AsyncMock()

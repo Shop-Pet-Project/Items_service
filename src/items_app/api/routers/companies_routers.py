@@ -1,13 +1,18 @@
 import logging
 from uuid import UUID
 from typing import Annotated, List, Optional, Union, Dict
-from fastapi import APIRouter, Depends, HTTPException, Query
-from items_app.api.providers import get_item_repo, get_company_repo
-from items_app.api.schemas import CompanyCreate, CompanyResponse, CompanyUpdate, CompanyUpdateResponse
-from items_app.application.application import ItemApplications, CompanyApplications
-from items_app.application.application_exceptions import ItemNotFound, CompanyNotFound
-from items_app.infrastructure.models import Item, Company
-from items_app.infrastructure.repository import ItemRepo, CompanyRepo
+from fastapi import APIRouter, Depends, HTTPException
+from items_app.api.providers import get_company_repo
+from items_app.api.schemas import (
+    CompanyCreate,
+    CompanyResponse,
+    CompanyUpdate,
+    CompanyUpdateResponse,
+)
+from items_app.application.application import CompanyApplications
+from items_app.application.application_exceptions import CompanyNotFound
+from items_app.infrastructure.models import Company
+from items_app.infrastructure.repository import CompanyRepo
 
 
 logger = logging.getLogger(__name__)
@@ -22,13 +27,18 @@ async def create_new_company(
 ):
     try:
         new_company_data = Company(name=new_company_schema.name)
-        new_company = await CompanyApplications.create_company(new_company_data, company_repo)
+        new_company = await CompanyApplications.create_company(
+            new_company_data, company_repo
+        )
         company_response = CompanyResponse.model_validate(new_company)
-        return {"message": "New company created successfully", "company": company_response}
+        return {
+            "message": "New company created successfully",
+            "company": company_response,
+        }
     except Exception as e:
         logger.error(f"Unexpected error: {type(e).__name__} - {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to create company")
-    
+
 
 @router.get(
     "/{company_id}", summary="Вывод компании по ID", response_model=CompanyResponse
@@ -38,7 +48,9 @@ async def get_company_by_id(
     company_repo: Annotated[CompanyRepo, Depends(get_company_repo)],
 ):
     try:
-        company = await CompanyApplications.fetch_company_by_id(company_id, company_repo)
+        company = await CompanyApplications.fetch_company_by_id(
+            company_id, company_repo
+        )
         if not company:
             raise CompanyNotFound(f"Company with company_id={company_id} not found")
         company_response = CompanyResponse.model_validate(company)
@@ -60,9 +72,13 @@ async def get_all_companies(
     limit: Optional[int] = 10,
 ):
     try:
-        companies = await CompanyApplications.fetch_all_companies(offset, limit, company_repo)
+        companies = await CompanyApplications.fetch_all_companies(
+            offset, limit, company_repo
+        )
         if companies:
-            company_response = [CompanyResponse.model_validate(company) for company in companies]
+            company_response = [
+                CompanyResponse.model_validate(company) for company in companies
+            ]
             return company_response
         else:
             return {"message": "No companies in database"}
@@ -72,7 +88,9 @@ async def get_all_companies(
 
 
 @router.put(
-    "/{company_id}", summary="Обновление компании по ID", response_model=CompanyUpdateResponse
+    "/{company_id}",
+    summary="Обновление компании по ID",
+    response_model=CompanyUpdateResponse,
 )
 async def update_company_by_id(
     update_data: CompanyUpdate,
@@ -92,8 +110,8 @@ async def update_company_by_id(
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to update company")\
-        
+        raise HTTPException(status_code=500, detail="Failed to update company")
+
 
 @router.delete("/{company_id}", summary="Удаление компании по ID")
 async def delete_company_by_id(
@@ -116,4 +134,3 @@ async def delete_company_by_id(
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         raise HTTPException(status_code=500, detail="Failed to delete company")
-    

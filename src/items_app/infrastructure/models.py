@@ -30,5 +30,3 @@ class Company(Base):
     )
     name: Mapped[str]
     items: Mapped[list["Item"]] = relationship(back_populates="company")
-
-    

@@ -3,6 +3,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field, ConfigDict
 
 """ Схемы для валидации данных, связанных с товарами. """
+
+
 class ItemCreate(BaseModel):
     title: str = Field(min_length=1, max_length=32)
     price: float = Field(gt=0)
@@ -25,6 +27,8 @@ class ItemsIdList(BaseModel):
 
 
 """ Схемы для валидации данных, связанных с компаниями. """
+
+
 class CompanyCreate(BaseModel):
     name: str = Field(min_length=1, max_length=64)
 

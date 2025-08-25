@@ -20,7 +20,11 @@ async def create_new_item(
     new_item_schema: ItemCreate, item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
 ):
     try:
-        new_item_data = Item(title=new_item_schema.title, price=new_item_schema.price, company_id=new_item_schema.company_id)
+        new_item_data = Item(
+            title=new_item_schema.title,
+            price=new_item_schema.price,
+            company_id=new_item_schema.company_id,
+        )
         new_item = await ItemApplications.create_item(new_item_data, item_repo)
         item_response = ItemResponse.model_validate(new_item)
         return {"message": "New item created successfully", "item": item_response}
@@ -103,18 +107,28 @@ async def get_items_by_ids_post(
 
 
 @router.get(
-    "/company/{company_id}", summary="Вывод всех товаров компании по ID компании", response_model=List[ItemResponse]
+    "/company/{company_id}",
+    summary="Вывод всех товаров компании по ID компании",
+    response_model=List[ItemResponse],
 )
 async def get_items_of_company_by_company_id(
-    company_id: UUID, item_repo: Annotated[ItemRepo, Depends(get_item_repo)], company_repo: Annotated[CompanyRepo, Depends(get_company_repo)]
+    company_id: UUID,
+    item_repo: Annotated[ItemRepo, Depends(get_item_repo)],
+    company_repo: Annotated[CompanyRepo, Depends(get_company_repo)],
 ):
     try:
-        current_company = await CompanyApplications.fetch_company_by_id(company_id, company_repo)
+        current_company = await CompanyApplications.fetch_company_by_id(
+            company_id, company_repo
+        )
         if not current_company:
             raise CompanyNotFound(f"Company with company_id={company_id} not found")
-        items = await ItemApplications.fetch_items_of_company_by_company_id(company_id, item_repo)
+        items = await ItemApplications.fetch_items_of_company_by_company_id(
+            company_id, item_repo
+        )
         if not items:
-            raise ItemNotFound(f"No items found for company with company_id={company_id}")
+            raise ItemNotFound(
+                f"No items found for company with company_id={company_id}"
+            )
         item_response = [ItemResponse.model_validate(item) for item in items]
         return item_response
     except CompanyNotFound as e:
@@ -156,7 +170,10 @@ async def update_item_data_by_id(
 ):
     try:
         update_item_data = Item(
-            id=item_id, title=update_data.title, price=update_data.price, company_id=update_data.company_id
+            id=item_id,
+            title=update_data.title,
+            price=update_data.price,
+            company_id=update_data.company_id,
         )
         updated_item = await ItemApplications.update_item_data(
             update_item_data, item_repo

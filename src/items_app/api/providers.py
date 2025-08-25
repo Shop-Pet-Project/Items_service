@@ -16,5 +16,8 @@ async def get_session():
 def get_item_repo(session: Annotated[AsyncSession, Depends(get_session)]) -> ItemRepo:
     return ItemRepo(async_session=session)
 
-def get_company_repo(session: Annotated[AsyncSession, Depends(get_session)]) -> CompanyRepo:
+
+def get_company_repo(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> CompanyRepo:
     return CompanyRepo(async_session=session)

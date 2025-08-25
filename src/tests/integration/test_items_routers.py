@@ -28,6 +28,7 @@ async def override_get_session():
 
 app.dependency_overrides[get_session] = override_get_session
 
+
 # --- Фикстуры ---
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def init_database():
@@ -50,11 +51,10 @@ async def cleanup_database():
 async def company_id():
     async with TestingSessionLocal() as session:
         comp_id = uuid.uuid4()
-        await session.execute(
-            insert(Company).values(id=comp_id, name="Test Company")
-        )
+        await session.execute(insert(Company).values(id=comp_id, name="Test Company"))
         await session.commit()
         return str(comp_id)
+
 
 @pytest_asyncio.fixture
 async def client():
@@ -62,7 +62,9 @@ async def client():
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
+
 # --- Тесты ---
+
 
 @pytest.mark.asyncio
 async def test_healthcheck(client):

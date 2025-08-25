@@ -42,7 +42,7 @@ class ItemRepo:
         except SQLAlchemyError as e:
             logger.error(f"Error of getting items by ids: {e}")
             return None
-        
+
     async def get_items_by_company_id(self, company_id: UUID) -> List[Item] | None:
         try:
             stmt = select(Item).where(Item.company_id == company_id)
@@ -117,7 +117,7 @@ class ItemRepo:
 class CompanyRepo:
     def __init__(self, async_session: AsyncSession):
         self._session = async_session
-        
+
     async def add_company(self, company_data: Company) -> Company | None:
         try:
             self._session.add(company_data)
@@ -126,7 +126,7 @@ class CompanyRepo:
             await self._session.rollback()
             logger.error(f"Error of adding company: {e}")
             return None
-        
+
     async def get_company_by_id(self, company_id: UUID) -> Company | None:
         try:
             stmt = select(Company).where(Company.id == company_id)
@@ -136,8 +136,10 @@ class CompanyRepo:
         except SQLAlchemyError as e:
             logger.error(f"Error of getting company: {e}")
             return None
-        
-    async def get_all_companies(self, offset: Optional[int] = 0, limit: Optional[int] = 10) -> List[Company] | None:
+
+    async def get_all_companies(
+        self, offset: Optional[int] = 0, limit: Optional[int] = 10
+    ) -> List[Company] | None:
         try:
             stmt = select(Company).offset(offset).limit(limit)
             cursor = await self._session.execute(stmt)
@@ -146,8 +148,10 @@ class CompanyRepo:
         except SQLAlchemyError as e:
             logger.error(f"Error of getting companies: {e}")
             return None
-        
-    async def update_company_data(self, updated_company_data: Company) -> Company | None:
+
+    async def update_company_data(
+        self, updated_company_data: Company
+    ) -> Company | None:
         try:
             current_company = await self.get_company_by_id(updated_company_data.id)
             if not current_company:
@@ -159,7 +163,7 @@ class CompanyRepo:
             await self._session.rollback()
             logger.error(f"Error of updating company: {e}")
             return None
-        
+
     async def remove_company_by_id(self, company_id: UUID) -> bool | None:
         try:
             current_company = await self.get_company_by_id(company_id)
@@ -176,7 +180,7 @@ class CompanyRepo:
             await self._session.rollback()
             logger.error(f"Error of deleting company: {e}")
             return None
-        
+
     async def commit(self) -> None:
         try:
             await self._session.commit()

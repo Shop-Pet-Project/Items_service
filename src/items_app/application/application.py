@@ -74,7 +74,9 @@ class ItemApplications:
         try:
             response = await item_repo.get_items_by_company_id(company_id=company_id)
             if not response:
-                raise ItemNotFound(f"No items found for company with company_id={company_id}")
+                raise ItemNotFound(
+                    f"No items found for company with company_id={company_id}"
+                )
             else:
                 return response
         except Exception as e:
@@ -166,7 +168,7 @@ class CompanyApplications:
         except Exception as e:
             logger.error(f"Error of getting company by id: {e}")
             raise
-    
+
     @staticmethod
     async def fetch_all_companies(
         offset: Optional[int], limit: Optional[int], company_repo: CompanyRepo
@@ -187,7 +189,9 @@ class CompanyApplications:
                 updated_company_data=update_company
             )
             if not response:
-                raise CompanyNotFound(f"No such company with company_id={update_company.id}")
+                raise CompanyNotFound(
+                    f"No such company with company_id={update_company.id}"
+                )
             else:
                 await company_repo.commit()
                 return response
@@ -197,7 +201,9 @@ class CompanyApplications:
             raise
 
     @staticmethod
-    async def delete_company(company_id: UUID, company_repo: CompanyRepo) -> bool | None:
+    async def delete_company(
+        company_id: UUID, company_repo: CompanyRepo
+    ) -> bool | None:
         try:
             response = await company_repo.remove_company_by_id(company_id=company_id)
             if not response:
