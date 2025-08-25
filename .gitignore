@@ -11,3 +11,8 @@ wheels/
 
 # Databases
 *.sqlite3
+
+# IDE files
+.vscode/
+.idea/
+*.iml
