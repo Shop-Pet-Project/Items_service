@@ -172,7 +172,7 @@ class CompanyApplications:
         offset: Optional[int], limit: Optional[int], company_repo: CompanyRepo
     ) -> List[Company] | None:
         try:
-            response = await company_repo.get_companies(offset, limit)
+            response = await company_repo.get_all_companies(offset, limit)
             return response
         except Exception as e:
             logger.error(f"Error of getting all companies: {e}")

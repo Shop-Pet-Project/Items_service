@@ -2,12 +2,12 @@ import logging
 from uuid import UUID
 from typing import Annotated, List, Optional, Union, Dict
 from fastapi import APIRouter, Depends, HTTPException, Query
-from items_app.api.providers import get_item_repo
+from items_app.api.providers import get_item_repo, get_company_repo
 from items_app.api.schemas import ItemCreate, ItemResponse, ItemsIdList
-from items_app.application.application import ItemApplications
-from items_app.application.application_exceptions import ItemNotFound
+from items_app.application.application import ItemApplications, CompanyApplications
+from items_app.application.application_exceptions import ItemNotFound, CompanyNotFound
 from items_app.infrastructure.models import Item
-from items_app.infrastructure.repository import ItemRepo
+from items_app.infrastructure.repository import ItemRepo, CompanyRepo
 
 
 logger = logging.getLogger(__name__)
@@ -100,6 +100,32 @@ async def get_items_by_ids_post(
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch items")
+
+
+@router.get(
+    "/company/{company_id}", summary="Вывод всех товаров компании по ID компании", response_model=List[ItemResponse]
+)
+async def get_items_of_company_by_company_id(
+    company_id: UUID, item_repo: Annotated[ItemRepo, Depends(get_item_repo)], company_repo: Annotated[CompanyRepo, Depends(get_company_repo)]
+):
+    try:
+        current_company = await CompanyApplications.fetch_company_by_id(company_id, company_repo)
+        if not current_company:
+            raise CompanyNotFound(f"Company with company_id={company_id} not found")
+        items = await ItemApplications.fetch_items_of_company_by_company_id(company_id, item_repo)
+        if not items:
+            raise ItemNotFound(f"No items found for company with company_id={company_id}")
+        item_response = [ItemResponse.model_validate(item) for item in items]
+        return item_response
+    except CompanyNotFound as e:
+        logger.error(f"Error: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
+    except ItemNotFound as e:
+        logger.error(f"Error: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Unexpected error: {type(e).__name__} - {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch items of company")
 
 
 @router.get(
