@@ -42,6 +42,16 @@ class ItemRepo:
         except SQLAlchemyError as e:
             logger.error(f"Error of getting items by ids: {e}")
             return None
+        
+    async def get_items_by_company_id(self, company_id: UUID) -> List[Item] | None:
+        try:
+            stmt = select(Item).where(Item.company_id == company_id)
+            cursor = await self._session.execute(stmt)
+            result = list(cursor.scalars().all())
+            return result or None
+        except SQLAlchemyError as e:
+            logger.error(f"Error of getting items by company id: {e}")
+            return None
 
     async def get_items(
         self, offset: Optional[int] = 0, limit: Optional[int] = 10
@@ -156,11 +166,11 @@ class CompanyRepo:
             if not current_company:
                 return None
             else:
-                stmt = delete(Item).where(Item.company_id == company_id)
-                await self._session.execute(stmt)
+                del_items_stmt = delete(Item).where(Item.company_id == company_id)
+                await self._session.execute(del_items_stmt)
 
-                stmt = delete(Company).where(Company.id == company_id)
-                await self._session.execute(stmt)
+                del_company_stmt = delete(Company).where(Company.id == company_id)
+                await self._session.execute(del_company_stmt)
                 return True
         except SQLAlchemyError as e:
             await self._session.rollback()

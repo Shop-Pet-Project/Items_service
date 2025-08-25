@@ -68,6 +68,20 @@ class ItemApplications:
             raise
 
     @staticmethod
+    async def fetch_items_of_company_by_company_id(
+        company_id: UUID, item_repo: ItemRepo
+    ) -> List[Item] | None:
+        try:
+            response = await item_repo.get_items_by_company_id(company_id=company_id)
+            if not response:
+                raise ItemNotFound(f"No items found for company with company_id={company_id}")
+            else:
+                return response
+        except Exception as e:
+            logger.error(f"Error of getting items by company id: {e}")
+            raise
+
+    @staticmethod
     async def fetch_all_items(
         offset: Optional[int], limit: Optional[int], item_repo: ItemRepo
     ) -> List[Item] | None:
