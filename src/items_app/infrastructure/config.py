@@ -17,6 +17,7 @@ class BaseConfig(ABC):
     Абстрактный, базовый класс конфигурации.
     """
 
+    # --- Конфигурация базы данных PostgreSQL ---
     DB_ASYNC_DRIVER: str = "postgresql+asyncpg"
     DB_SYNC_DRIVER: str = "postgresql+psycopg2"
     DB_USER: str = "items_user"
@@ -33,6 +34,22 @@ class BaseConfig(ABC):
         """
         pass
 
+    # --- Конфигурация сервиса Redis ---
+    REDIS_DRIVER: str = "redis"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_CACHE_EXPIRE_SECONDS: int = 3600
+
+    @property
+    @abstractmethod
+    def REDIS_HOST(self) -> str:
+        """
+        Абстрактный метод для получения хоста Redis.
+        Должен быть реализован в дочерних классах.
+        """
+        pass
+    
+    # --- Свойства для формирования URL ---
     @property
     def DB_URL(self) -> str:
         """
@@ -60,6 +77,13 @@ class DevelopmentConfig(BaseConfig):
         Возвращает хост базы данных для локальной разработки.
         """
         return "localhost"
+    
+    @property
+    def REDIS_HOST(self) -> str:
+        """
+        Возвращает хост Redis для локальной разработки.
+        """
+        return "localhost"
 
 
 class DockerConfig(BaseConfig):
@@ -74,6 +98,13 @@ class DockerConfig(BaseConfig):
         Возвращает хост базы данных для Docker-контейнера.
         """
         return "postgres"
+    
+    @property
+    def REDIS_HOST(self) -> str:
+        """
+        Возвращает хост Redis для Docker-контейнера.
+        """
+        return "redis"
 
 
 config = DevelopmentConfig() if ENV_MODE == "development" else DockerConfig()
