@@ -2,7 +2,7 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from items_app.infrastructure.models import Base
+from items_app.infrastructure.postgres.models import Base
 
 # --- Настройка тестовой базы ---
 DATABASE_URL = "sqlite+aiosqlite:///:memory:"

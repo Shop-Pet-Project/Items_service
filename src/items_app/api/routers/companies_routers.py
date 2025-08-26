@@ -11,8 +11,8 @@ from items_app.api.schemas import (
 )
 from items_app.application.application import CompanyApplications
 from items_app.application.application_exceptions import CompanyNotFound
-from items_app.infrastructure.models import Company
-from items_app.infrastructure.repository import CompanyRepo
+from items_app.infrastructure.postgres.models import Company
+from items_app.infrastructure.postgres.repository import CompanyRepo
 
 
 logger = logging.getLogger(__name__)

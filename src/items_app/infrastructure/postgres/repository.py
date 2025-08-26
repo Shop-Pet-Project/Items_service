@@ -2,7 +2,7 @@ from uuid import UUID
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from items_app.infrastructure.models import Item, Company
+from items_app.infrastructure.postgres.models import Item, Company
 from typing import List, Optional
 import logging
 

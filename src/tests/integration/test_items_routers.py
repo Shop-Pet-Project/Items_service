@@ -7,7 +7,7 @@ from sqlalchemy import insert
 
 from items_app.main import app
 from items_app.api.providers import get_session
-from items_app.infrastructure.models import Base, Company
+from items_app.infrastructure.postgres.models import Base, Company
 from tests.integration.conftest import TestingSessionLocal, engine, setup_database  # noqa: F401
 
 

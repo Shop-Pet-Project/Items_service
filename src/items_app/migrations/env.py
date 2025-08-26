@@ -5,7 +5,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from items_app.infrastructure.config import config as app_config
-from items_app.infrastructure.models import Base, Item, Company  # noqa: F401
+from items_app.infrastructure.postgres.models import Base, Item, Company  # noqa: F401
 
 DATABASE_URL = app_config.ALEMBIC_DB_URL
 

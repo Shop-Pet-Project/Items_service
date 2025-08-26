@@ -6,8 +6,8 @@ from items_app.api.providers import get_item_repo, get_company_repo
 from items_app.api.schemas import ItemCreate, ItemResponse, ItemsIdList
 from items_app.application.application import ItemApplications, CompanyApplications
 from items_app.application.application_exceptions import ItemNotFound, CompanyNotFound
-from items_app.infrastructure.models import Item
-from items_app.infrastructure.repository import ItemRepo, CompanyRepo
+from items_app.infrastructure.postgres.models import Item
+from items_app.infrastructure.postgres.repository import ItemRepo, CompanyRepo
 
 
 logger = logging.getLogger(__name__)

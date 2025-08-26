@@ -2,8 +2,8 @@ import logging
 from uuid import UUID
 from typing import List, Optional
 from items_app.application.application_exceptions import ItemNotFound, CompanyNotFound
-from items_app.infrastructure.models import Item, Company
-from items_app.infrastructure.repository import ItemRepo, CompanyRepo
+from items_app.infrastructure.postgres.models import Item, Company
+from items_app.infrastructure.postgres.repository import ItemRepo, CompanyRepo
 
 
 logger = logging.getLogger(__name__)
