@@ -2,12 +2,17 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from items_app.infrastructure.postgres.database import async_session
-from items_app.infrastructure.postgres.repository import ItemRepo, CompanyRepo
+from items_app.infrastructure.postgres.repositories.item_repo import ItemRepo
+from items_app.infrastructure.postgres.repositories.company_repo import CompanyRepo
 from items_app.infrastructure.redis.cache.async_client import AsyncRedisClient
 from items_app.infrastructure.redis.cache.json_serializer import JsonSerializer
 from items_app.infrastructure.redis.cache.async_cache_manager import AsyncCacheManager
-from items_app.application.items_applications.items_applications_service import ItemsApplicationsService
-from items_app.application.companies_applications.companies_applications_service import CompaniesApplicationsService
+from items_app.application.items_applications.items_applications_service import (
+    ItemsApplicationsService,
+)
+from items_app.application.companies_applications.companies_applications_service import (
+    CompaniesApplicationsService,
+)
 
 
 # --- Получение сессии базы данных ---
@@ -48,12 +53,12 @@ def get_async_cache_manager(
 
 # --- Получение сервисов для работы с сущностями ---
 def get_items_app_service(
-    item_repo: Annotated[ItemRepo, Depends(get_item_repo)]
+    item_repo: Annotated[ItemRepo, Depends(get_item_repo)],
 ) -> ItemsApplicationsService:
     return ItemsApplicationsService(item_repo=item_repo)
 
 
 def get_companies_app_service(
-    company_repo: Annotated[CompanyRepo, Depends(get_company_repo)]
+    company_repo: Annotated[CompanyRepo, Depends(get_company_repo)],
 ) -> CompaniesApplicationsService:
     return CompaniesApplicationsService(company_repo=company_repo)

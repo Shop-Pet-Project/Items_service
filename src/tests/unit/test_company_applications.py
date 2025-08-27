@@ -1,8 +1,13 @@
 import pytest
 from uuid import uuid4
 from unittest.mock import AsyncMock, MagicMock
-from items_app.application.companies_applications.companies_applications_service import CompaniesApplicationsService
-from items_app.application.companies_applications.companies_applications_exceptions import CompanyNotFound
+from items_app.application.companies_applications.companies_applications_service import (
+    CompaniesApplicationsService,
+)
+from items_app.application.companies_applications.companies_applications_exceptions import (
+    CompanyNotFound,
+)
+
 
 @pytest.mark.asyncio
 async def test_create_company_success():
@@ -17,6 +22,7 @@ async def test_create_company_success():
     repo.commit.assert_awaited_once()
     assert result is company
 
+
 @pytest.mark.asyncio
 async def test_fetch_company_by_id_found():
     repo = AsyncMock()
@@ -30,6 +36,7 @@ async def test_fetch_company_by_id_found():
     repo.get_company_by_id.assert_awaited_once_with(company_id=company_id)
     assert result is fake_company
 
+
 @pytest.mark.asyncio
 async def test_fetch_company_by_id_not_found():
     repo = AsyncMock()
@@ -39,6 +46,7 @@ async def test_fetch_company_by_id_not_found():
 
     with pytest.raises(CompanyNotFound):
         await service.fetch_company_by_id(company_id)
+
 
 @pytest.mark.asyncio
 async def test_fetch_all_companies_success():
@@ -52,6 +60,7 @@ async def test_fetch_all_companies_success():
     repo.get_all_companies.assert_awaited_once_with(0, 10)
     assert result == companies
 
+
 @pytest.mark.asyncio
 async def test_fetch_all_companies_empty():
     repo = AsyncMock()
@@ -62,6 +71,7 @@ async def test_fetch_all_companies_empty():
 
     repo.get_all_companies.assert_awaited_once_with(0, 10)
     assert result == []
+
 
 @pytest.mark.asyncio
 async def test_update_company_data_success():
@@ -76,6 +86,7 @@ async def test_update_company_data_success():
     repo.commit.assert_awaited_once()
     assert result is company
 
+
 @pytest.mark.asyncio
 async def test_update_company_data_not_found():
     repo = AsyncMock()
@@ -87,6 +98,7 @@ async def test_update_company_data_not_found():
         await service.update_company_data(company)
 
     repo.rollback.assert_awaited_once()
+
 
 @pytest.mark.asyncio
 async def test_delete_company_success():
@@ -100,6 +112,7 @@ async def test_delete_company_success():
     repo.remove_company_by_id.assert_awaited_once_with(company_id=company_id)
     repo.commit.assert_awaited_once()
     assert result is True
+
 
 @pytest.mark.asyncio
 async def test_delete_company_not_found():

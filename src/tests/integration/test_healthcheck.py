@@ -1,12 +1,9 @@
-import uuid
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
-
 from items_app.main import app
 from items_app.api.providers import get_session
-from items_app.infrastructure.postgres.models import Base
-from tests.integration.conftest import TestingSessionLocal, engine, setup_database  # noqa: F401
+from tests.integration.conftest import TestingSessionLocal
 
 
 # --- Переопределение зависимости для использования тестовой БД ---
@@ -34,11 +31,3 @@ async def test_healthcheck(client: AsyncClient):
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "ok"
-
-
-# @pytest.mark.asyncio
-# async def test_ping_cache(client: AsyncClient):
-#     resp = await client.get("/healthy/ping-cache")
-#     assert resp.status_code == 200
-#     data = resp.json()
-#     assert data["status"] == "ok"

@@ -3,11 +3,19 @@ from uuid import UUID
 from typing import Annotated, List, Optional, Union, Dict
 from fastapi import APIRouter, Depends, HTTPException, Query
 from items_app.api.providers import get_items_app_service, get_companies_app_service
-from items_app.api.schemas import ItemCreate, ItemResponse, ItemsIdList
-from items_app.application.items_applications.items_applications_service import ItemsApplicationsService
-from items_app.application.companies_applications.companies_applications_service import CompaniesApplicationsService
-from items_app.application.items_applications.items_applications_exceptions import ItemNotFound
-from items_app.application.companies_applications.companies_applications_exceptions import CompanyNotFound
+from items_app.api.schemas.item_schemas import ItemCreate, ItemResponse, ItemsIdList
+from items_app.application.items_applications.items_applications_service import (
+    ItemsApplicationsService,
+)
+from items_app.application.companies_applications.companies_applications_service import (
+    CompaniesApplicationsService,
+)
+from items_app.application.items_applications.items_applications_exceptions import (
+    ItemNotFound,
+)
+from items_app.application.companies_applications.companies_applications_exceptions import (
+    CompanyNotFound,
+)
 from items_app.infrastructure.postgres.models import Item
 
 
@@ -18,7 +26,8 @@ router = APIRouter(prefix="/items", tags=["Items"])
 
 @router.post("", summary="Создание товара")
 async def create_new_item(
-    new_item_schema: ItemCreate, items_service: Annotated[ItemsApplicationsService, Depends(get_items_app_service)]
+    new_item_schema: ItemCreate,
+    items_service: Annotated[ItemsApplicationsService, Depends(get_items_app_service)],
 ):
     try:
         new_item_data = Item(
@@ -66,7 +75,8 @@ async def get_items_by_ids_get(
 
 @router.get("/{item_id}", summary="Вывод товара по ID", response_model=ItemResponse)
 async def get_item_by_id(
-    item_id: UUID, items_service: Annotated[ItemsApplicationsService, Depends(get_items_app_service)]
+    item_id: UUID,
+    items_service: Annotated[ItemsApplicationsService, Depends(get_items_app_service)],
 ):
     try:
         item = await items_service.fetch_item_by_id(item_id)
@@ -86,7 +96,8 @@ async def get_item_by_id(
     response_model=List[ItemResponse],
 )
 async def get_items_by_ids_post(
-    item_ids: ItemsIdList, items_service: Annotated[ItemsApplicationsService, Depends(get_items_app_service)]
+    item_ids: ItemsIdList,
+    items_service: Annotated[ItemsApplicationsService, Depends(get_items_app_service)],
 ):
     if not item_ids.item_ids:
         raise HTTPException(status_code=422, detail="Empty list of item IDs provided")
@@ -115,17 +126,15 @@ async def get_items_by_ids_post(
 async def get_items_of_company_by_company_id(
     company_id: UUID,
     items_service: Annotated[ItemsApplicationsService, Depends(get_items_app_service)],
-    companies_service: Annotated[CompaniesApplicationsService, Depends(get_companies_app_service)],
+    companies_service: Annotated[
+        CompaniesApplicationsService, Depends(get_companies_app_service)
+    ],
 ):
     try:
-        current_company = await companies_service.fetch_company_by_id(
-            company_id
-        )
+        current_company = await companies_service.fetch_company_by_id(company_id)
         if not current_company:
             raise CompanyNotFound(f"Company with company_id={company_id} not found")
-        items = await items_service.fetch_items_of_company_by_company_id(
-            company_id
-        )
+        items = await items_service.fetch_items_of_company_by_company_id(company_id)
         if not items:
             raise ItemNotFound(
                 f"No items found for company with company_id={company_id}"
@@ -176,9 +185,7 @@ async def update_item_data_by_id(
             price=update_data.price,
             company_id=update_data.company_id,
         )
-        updated_item = await items_service.update_item_data(
-            update_item_data
-        )
+        updated_item = await items_service.update_item_data(update_item_data)
         item_response = ItemResponse.model_validate(updated_item)
         return {"message": "Item updated successfully", "item": item_response}
     except ItemNotFound as e:
@@ -191,7 +198,8 @@ async def update_item_data_by_id(
 
 @router.delete("/delete-many", summary="Удаление нескольких товаров по ID")
 async def delete_items_by_ids(
-    item_ids: ItemsIdList, items_service: Annotated[ItemsApplicationsService, Depends(get_items_app_service)]
+    item_ids: ItemsIdList,
+    items_service: Annotated[ItemsApplicationsService, Depends(get_items_app_service)],
 ):
     try:
         if not item_ids.item_ids:
@@ -214,7 +222,8 @@ async def delete_items_by_ids(
 
 @router.delete("/{item_id}", summary="Удаление товара по ID")
 async def delete_item_by_id(
-    item_id: UUID, items_service: Annotated[ItemsApplicationsService, Depends(get_items_app_service)]
+    item_id: UUID,
+    items_service: Annotated[ItemsApplicationsService, Depends(get_items_app_service)],
 ):
     try:
         await items_service.delete_item(item_id)

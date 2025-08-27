@@ -1,9 +1,11 @@
 import logging
 from uuid import UUID
 from typing import List, Optional
-from items_app.application.items_applications.items_applications_exceptions import ItemNotFound
+from items_app.application.items_applications.items_applications_exceptions import (
+    ItemNotFound,
+)
 from items_app.infrastructure.postgres.models import Item
-from items_app.infrastructure.postgres.repository import ItemRepo
+from items_app.infrastructure.postgres.repositories.item_repo import ItemRepo
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +35,18 @@ class ItemsApplicationsService:
             logger.error(f"Error of getting item by id: {e}")
             raise
 
-    async def get_missing_ids(self, existing_items: Optional[List[Item]], item_ids: List[UUID]) -> List[str]:
+    async def get_missing_ids(
+        self, existing_items: Optional[List[Item]], item_ids: List[UUID]
+    ) -> List[str]:
         try:
-            existing_items_set = {item.id for item in existing_items} if existing_items else set()
-            missing_ids = [str(item_id) for item_id in item_ids if item_id not in existing_items_set]
+            existing_items_set = (
+                {item.id for item in existing_items} if existing_items else set()
+            )
+            missing_ids = [
+                str(item_id)
+                for item_id in item_ids
+                if item_id not in existing_items_set
+            ]
             return missing_ids
         except Exception as e:
             logger.error(f"Error of getting existing and missing ids: {e}")
@@ -54,18 +64,26 @@ class ItemsApplicationsService:
             logger.error(f"Error of getting items by ids: {e}")
             raise
 
-    async def fetch_items_of_company_by_company_id(self, company_id: UUID) -> List[Item] | None:
+    async def fetch_items_of_company_by_company_id(
+        self, company_id: UUID
+    ) -> List[Item] | None:
         try:
-            response = await self.item_repo.get_items_by_company_id(company_id=company_id)
+            response = await self.item_repo.get_items_by_company_id(
+                company_id=company_id
+            )
             if not response:
-                raise ItemNotFound(f"No items found for company with company_id={company_id}")
+                raise ItemNotFound(
+                    f"No items found for company with company_id={company_id}"
+                )
             else:
                 return response
         except Exception as e:
             logger.error(f"Error of getting items by company id: {e}")
             raise
 
-    async def fetch_all_items(self, offset: Optional[int], limit: Optional[int]) -> List[Item] | None:
+    async def fetch_all_items(
+        self, offset: Optional[int], limit: Optional[int]
+    ) -> List[Item] | None:
         try:
             response = await self.item_repo.get_items(offset, limit)
             return response
