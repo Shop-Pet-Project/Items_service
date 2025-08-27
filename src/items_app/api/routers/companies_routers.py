@@ -2,15 +2,15 @@ import logging
 from uuid import UUID
 from typing import Annotated, List, Optional, Union, Dict
 from fastapi import APIRouter, Depends, HTTPException
-from items_app.api.providers import get_company_repo
+from items_app.api.providers import get_companies_app_service
 from items_app.api.schemas import (
     CompanyCreate,
     CompanyResponse,
     CompanyUpdate,
     CompanyUpdateResponse,
 )
-from items_app.application.application import CompanyApplications
-from items_app.application.application_exceptions import CompanyNotFound
+from items_app.application.companies_applications.companies_applications_service import CompaniesApplicationsService
+from items_app.application.companies_applications.companies_applications_exceptions import CompanyNotFound
 from items_app.infrastructure.postgres.models import Company
 from items_app.infrastructure.postgres.repository import CompanyRepo
 
@@ -23,12 +23,12 @@ router = APIRouter(prefix="/companies", tags=["Companies"])
 @router.post("", summary="Создание компании")
 async def create_new_company(
     new_company_schema: CompanyCreate,
-    company_repo: Annotated[CompanyRepo, Depends(get_company_repo)],
+    companies_service: Annotated[CompaniesApplicationsService, Depends(get_companies_app_service)],
 ):
     try:
         new_company_data = Company(name=new_company_schema.name)
-        new_company = await CompanyApplications.create_company(
-            new_company_data, company_repo
+        new_company = await companies_service.create_company(
+            new_company_data
         )
         company_response = CompanyResponse.model_validate(new_company)
         return {
@@ -45,11 +45,11 @@ async def create_new_company(
 )
 async def get_company_by_id(
     company_id: UUID,
-    company_repo: Annotated[CompanyRepo, Depends(get_company_repo)],
+    companies_service: Annotated[CompaniesApplicationsService, Depends(get_companies_app_service)],
 ):
     try:
-        company = await CompanyApplications.fetch_company_by_id(
-            company_id, company_repo
+        company = await companies_service.fetch_company_by_id(
+            company_id
         )
         if not company:
             raise CompanyNotFound(f"Company with company_id={company_id} not found")
@@ -67,13 +67,13 @@ async def get_company_by_id(
     "", summary="Вывод всех компаний", response_model=Union[List[CompanyResponse], Dict]
 )
 async def get_all_companies(
-    company_repo: Annotated[CompanyRepo, Depends(get_company_repo)],
+    companies_service: Annotated[CompaniesApplicationsService, Depends(get_companies_app_service)],
     offset: Optional[int] = 0,
     limit: Optional[int] = 10,
 ):
     try:
-        companies = await CompanyApplications.fetch_all_companies(
-            offset, limit, company_repo
+        companies = await companies_service.fetch_all_companies(
+            offset, limit
         )
         if companies:
             company_response = [
@@ -94,12 +94,12 @@ async def get_all_companies(
 )
 async def update_company_by_id(
     update_data: CompanyUpdate,
-    company_repo: Annotated[CompanyRepo, Depends(get_company_repo)],
+    companies_service: Annotated[CompaniesApplicationsService, Depends(get_companies_app_service)],
 ):
     try:
         update_company_data = Company(id=update_data.id, name=update_data.name)
-        updated_company = await CompanyApplications.update_company_data(
-            update_company_data, company_repo
+        updated_company = await companies_service.update_company_data(
+            update_company_data
         )
         if not updated_company:
             raise CompanyNotFound(f"Company with company_id={update_data.id} not found")
@@ -116,10 +116,10 @@ async def update_company_by_id(
 @router.delete("/{company_id}", summary="Удаление компании по ID")
 async def delete_company_by_id(
     company_id: UUID,
-    company_repo: Annotated[CompanyRepo, Depends(get_company_repo)],
+    companies_service: Annotated[CompaniesApplicationsService, Depends(get_companies_app_service)],
 ):
     try:
-        result = await CompanyApplications.delete_company(company_id, company_repo)
+        result = await companies_service.delete_company(company_id)
         if result is None:
             raise CompanyNotFound(f"Company with company_id={company_id} not found")
         elif result is False:

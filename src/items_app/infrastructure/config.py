@@ -48,7 +48,7 @@ class BaseConfig(ABC):
         Должен быть реализован в дочерних классах.
         """
         pass
-    
+
     # --- Свойства для формирования URL ---
     @property
     def DB_URL(self) -> str:
@@ -77,7 +77,7 @@ class DevelopmentConfig(BaseConfig):
         Возвращает хост базы данных для локальной разработки.
         """
         return "localhost"
-    
+
     @property
     def REDIS_HOST(self) -> str:
         """
@@ -98,7 +98,7 @@ class DockerConfig(BaseConfig):
         Возвращает хост базы данных для Docker-контейнера.
         """
         return "postgres"
-    
+
     @property
     def REDIS_HOST(self) -> str:
         """

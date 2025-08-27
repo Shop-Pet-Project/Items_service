@@ -12,7 +12,12 @@ class AsyncCacheManager:
     def generate_key(self, *args: str) -> str:
         return ":".join(args)
 
-    async def set(self, key: str, value: Any, ex: Optional[int] = config.REDIS_CACHE_EXPIRE_SECONDS) -> None:
+    async def set(
+        self,
+        key: str,
+        value: Any,
+        ex: Optional[int] = config.REDIS_CACHE_EXPIRE_SECONDS,
+    ) -> None:
         serialized_value = self._serializer.dumps(value)
         await self._redis.set(key, serialized_value, ex)
 

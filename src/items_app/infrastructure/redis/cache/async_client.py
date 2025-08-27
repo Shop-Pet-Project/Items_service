@@ -17,9 +17,9 @@ class AsyncRedisClient:
 
     async def get(self, key: str) -> Optional[str]:
         return await self._client.get(name=key)
-    
+
     async def delete(self, *keys: str) -> int:
         return await self._client.delete(*keys)
-    
+
     def scan_iter(self, match: str) -> AsyncIterator[str]:
         return self._client.scan_iter(match=match)

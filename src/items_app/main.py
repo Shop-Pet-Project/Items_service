@@ -1,17 +1,13 @@
 from fastapi import FastAPI
 import uvicorn
+from items_app.api.routers.healthcheck_routers import router as healthcheck_routers
 from items_app.api.routers.companies_routers import router as companies_routers
 from items_app.api.routers.items_routers import router as items_routers
 
 
 app = FastAPI()
 
-
-@app.get("/healthy", summary="Проверка работы приложения", tags=["Healthcheck"])
-async def healthcheck():
-    return "Server is running"
-
-
+app.include_router(healthcheck_routers)
 app.include_router(companies_routers)
 app.include_router(items_routers)
 

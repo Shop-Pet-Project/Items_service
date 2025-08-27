@@ -4,11 +4,10 @@ import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy import insert
-
 from items_app.main import app
 from items_app.api.providers import get_session
 from items_app.infrastructure.postgres.models import Base, Company
-from tests.integration.conftest import TestingSessionLocal, engine, setup_database  # noqa: F401
+from tests.integration.conftest import TestingSessionLocal, engine
 
 
 async def override_get_session():
@@ -45,13 +44,6 @@ async def client():
 
 
 # --- Тесты ---
-@pytest.mark.asyncio
-async def test_healthcheck(client):
-    response = await client.get("/healthy")
-    assert response.status_code == 200
-    assert response.json() == "Server is running"
-
-
 @pytest.mark.asyncio
 async def test_create_item(client, company_id):
     response = await client.post(

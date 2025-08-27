@@ -2,23 +2,19 @@ import uuid
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
-
 from items_app.main import app
 from items_app.api.providers import get_session
 from items_app.infrastructure.postgres.models import Base
-from tests.integration.conftest import TestingSessionLocal, engine, setup_database  # noqa: F401
+from tests.integration.conftest import TestingSessionLocal, engine
 
-
-# --- Переопределение зависимости для использования тестовой БД ---
+# --- Переопределение зависимости ---
 async def override_get_session():
     async with TestingSessionLocal() as session:
         yield session
 
-
 app.dependency_overrides[get_session] = override_get_session
 
-
-# --- Фикстуры ---
+# --- Очистка базы перед каждым тестом ---
 @pytest_asyncio.fixture(autouse=True)
 async def cleanup_database():
     async with engine.begin() as conn:
@@ -26,25 +22,17 @@ async def cleanup_database():
             await conn.execute(table.delete())
     yield
 
-
+# --- Клиент ---
 @pytest_asyncio.fixture
 async def client():
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
 
 # --- Тесты ---
 @pytest.mark.asyncio
-async def test_healthcheck(client: AsyncClient):
-    resp = await client.get("/healthy")
-    assert resp.status_code == 200
-    assert resp.text == '"Server is running"'
-
-
-@pytest.mark.asyncio
-async def test_create_company(client: AsyncClient):
+async def test_create_company(client):
     resp = await client.post("/companies", json={"name": "Test Company"})
     assert resp.status_code == 200
     data = resp.json()
@@ -54,19 +42,19 @@ async def test_create_company(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_create_company_invalid_payload(client: AsyncClient):
+async def test_create_company_invalid_payload(client):
     resp = await client.post("/companies", json={})
     assert resp.status_code == 422
 
 
 @pytest.mark.asyncio
-async def test_create_company_missing_name(client: AsyncClient):
+async def test_create_company_missing_name(client):
     resp = await client.post("/companies", json={})
     assert resp.status_code == 422
 
 
 @pytest.mark.asyncio
-async def test_get_company_by_id(client: AsyncClient):
+async def test_get_company_by_id(client):
     create_resp = await client.post("/companies", json={"name": "Acme Inc"})
     company_id = create_resp.json()["company"]["id"]
 
@@ -78,7 +66,7 @@ async def test_get_company_by_id(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_get_company_by_id_not_found(client: AsyncClient):
+async def test_get_company_by_id_not_found(client):
     random_id = str(uuid.uuid4())
     resp = await client.get(f"/companies/{random_id}")
     assert resp.status_code == 404
@@ -86,7 +74,7 @@ async def test_get_company_by_id_not_found(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_get_all_companies_success(client: AsyncClient):
+async def test_get_all_companies_success(client):
     await client.post("/companies", json={"name": "Comp1"})
     await client.post("/companies", json={"name": "Comp2"})
 
@@ -97,7 +85,7 @@ async def test_get_all_companies_success(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_get_all_companies_pagination(client: AsyncClient):
+async def test_get_all_companies_pagination(client):
     for i in range(15):
         await client.post("/companies", json={"name": f"Comp{i}"})
 
@@ -108,14 +96,14 @@ async def test_get_all_companies_pagination(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_get_all_companies_with_empty_db(client: AsyncClient):
+async def test_get_all_companies_with_empty_db(client):
     resp = await client.get("/companies")
     assert resp.status_code == 200
     assert resp.json() == {"message": "No companies in database"}
 
 
 @pytest.mark.asyncio
-async def test_update_company_by_id(client: AsyncClient):
+async def test_update_company_by_id(client):
     create_resp = await client.post("/companies", json={"name": "Old Name"})
     company_id = create_resp.json()["company"]["id"]
 
@@ -128,7 +116,7 @@ async def test_update_company_by_id(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_update_company_not_found(client: AsyncClient):
+async def test_update_company_not_found(client):
     random_id = str(uuid.uuid4())
     update_payload = {"id": random_id, "name": "NoName"}
     resp = await client.put(f"/companies/{random_id}", json=update_payload)
@@ -137,13 +125,13 @@ async def test_update_company_not_found(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_update_company_invalid_payload(client: AsyncClient):
+async def test_update_company_invalid_payload(client):
     resp = await client.put("/companies/some-id", json={"name": "NameOnly"})
     assert resp.status_code == 422
 
 
 @pytest.mark.asyncio
-async def test_delete_company_success(client: AsyncClient):
+async def test_delete_company_success(client):
     create_resp = await client.post("/companies", json={"name": "DeleteMe"})
     company_id = create_resp.json()["company"]["id"]
 
@@ -153,7 +141,7 @@ async def test_delete_company_success(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_delete_company_not_found(client: AsyncClient):
+async def test_delete_company_not_found(client):
     random_id = str(uuid.uuid4())
     resp = await client.delete(f"/companies/{random_id}")
     assert resp.status_code == 404
@@ -161,6 +149,6 @@ async def test_delete_company_not_found(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_delete_company_invalid_id(client: AsyncClient):
+async def test_delete_company_invalid_id(client):
     resp = await client.delete("/companies/invalid-uuid")
     assert resp.status_code == 422
