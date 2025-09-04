@@ -11,7 +11,7 @@ from items_app.application.companies_applications.companies_applications_service
     CompaniesApplicationsService,
 )
 from items_app.application.items_applications.items_applications_exceptions import (
-    ItemNotFound,
+    ItemNotFound, NoAccessToItem
 )
 from items_app.application.companies_applications.companies_applications_exceptions import (
     CompanyNotFound,
@@ -19,6 +19,7 @@ from items_app.application.companies_applications.companies_applications_excepti
 from items_app.infrastructure.postgres.models import Item
 
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/items", tags=["Items"])
@@ -45,10 +46,11 @@ async def create_new_item(
 
 @router.get(
     "/get-many",
-    summary="Вывод нескольких товаров по ID (GET) для небольших списков",
+    summary="Вывод нескольких товаров компании по ID (GET) для небольших списков",
     response_model=List[ItemResponse],
 )
 async def get_items_by_ids_get(
+    company_id: UUID,
     items_service: Annotated[ItemsApplicationsService, Depends(get_items_app_service)],
     item_ids: Optional[List[UUID]] = Query(
         default=None, description="Список UUID товаров"
@@ -58,7 +60,7 @@ async def get_items_by_ids_get(
         raise HTTPException(status_code=422, detail="Empty list of item IDs provided")
 
     try:
-        items = await items_service.fetch_items_by_ids(item_ids)
+        items = await items_service.fetch_items_by_ids(item_ids, company_id)
         if not items:
             raise ItemNotFound("No items found for the provided IDs")
         item_response = [ItemResponse.model_validate(item) for item in items]
@@ -76,14 +78,16 @@ async def get_items_by_ids_get(
 @router.get("/{item_id}", summary="Вывод товара по ID", response_model=ItemResponse)
 async def get_item_by_id(
     item_id: UUID,
+    company_id: UUID,
     items_service: Annotated[ItemsApplicationsService, Depends(get_items_app_service)],
 ):
     try:
-        item = await items_service.fetch_item_by_id(item_id)
+        item = await items_service.fetch_item_by_id(item_id, company_id)
         item_response = ItemResponse.model_validate(item)
         return item_response
+    except NoAccessToItem as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except ItemNotFound as e:
-        logger.error(f"Error: {e}")
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Unexpected error: {type(e).__name__} - {str(e)}")
@@ -92,18 +96,19 @@ async def get_item_by_id(
 
 @router.post(
     "/get-many",
-    summary="Вывод нескольких товаров по ID (POST) для больших списков",
+    summary="Вывод нескольких товаров компании по ID (POST) для больших списков",
     response_model=List[ItemResponse],
 )
 async def get_items_by_ids_post(
     item_ids: ItemsIdList,
+    company_id: UUID,
     items_service: Annotated[ItemsApplicationsService, Depends(get_items_app_service)],
 ):
     if not item_ids.item_ids:
         raise HTTPException(status_code=422, detail="Empty list of item IDs provided")
 
     try:
-        items = await items_service.fetch_items_by_ids(item_ids.item_ids)
+        items = await items_service.fetch_items_by_ids(item_ids.item_ids, company_id)
         if not items:
             raise ItemNotFound("No items found for the provided IDs")
         item_response = [ItemResponse.model_validate(item) for item in items]
@@ -199,6 +204,7 @@ async def update_item_data_by_id(
 @router.delete("/delete-many", summary="Удаление нескольких товаров по ID")
 async def delete_items_by_ids(
     item_ids: ItemsIdList,
+    company_id: UUID,
     items_service: Annotated[ItemsApplicationsService, Depends(get_items_app_service)],
 ):
     try:
@@ -207,7 +213,7 @@ async def delete_items_by_ids(
                 status_code=422, detail="Empty list of item IDs provided"
             )
         item_ids_list = [item_id for item_id in item_ids.item_ids]
-        await items_service.delete_items(item_ids_list)
+        await items_service.delete_items(item_ids_list, company_id)
         item_ids_str = ", ".join(str(item_id) for item_id in item_ids_list)
         return {"message": f"Items with IDs [{item_ids_str}] have been deleted"}
     except ItemNotFound as e:
@@ -223,14 +229,15 @@ async def delete_items_by_ids(
 @router.delete("/{item_id}", summary="Удаление товара по ID")
 async def delete_item_by_id(
     item_id: UUID,
+    company_id: UUID,
     items_service: Annotated[ItemsApplicationsService, Depends(get_items_app_service)],
 ):
     try:
-        await items_service.delete_item(item_id)
+        await items_service.delete_item(item_id, company_id)
         return {"message": f"Item with item_id={item_id} was deleted"}
     except ItemNotFound as e:
         logger.error(f"Error: {e}")
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Unexpected error: {type(e).__name__} - {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to update item")
+        raise HTTPException(status_code=500, detail="Failed to delete item")

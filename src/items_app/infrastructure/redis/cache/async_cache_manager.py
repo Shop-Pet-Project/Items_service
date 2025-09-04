@@ -9,8 +9,8 @@ class AsyncCacheManager:
         self._redis = redis_client
         self._serializer = serializer
 
-    def generate_key(self, *args: str) -> str:
-        return ":".join(args)
+    def generate_key(self, *args: Any) -> str:
+        return ":".join(str(arg) for arg in args)
 
     async def set(
         self,
@@ -32,6 +32,7 @@ class AsyncCacheManager:
 
     async def delete_pattern(self, pattern: str) -> int:
         keys_to_delete = []
-        async for key in self._redis.scan_iter(match=pattern):
+        matching_keys = self._redis.scan_iter(match=pattern)
+        async for key in matching_keys:
             keys_to_delete.append(key)
         return await self._redis.delete(*keys_to_delete) if keys_to_delete else 0
