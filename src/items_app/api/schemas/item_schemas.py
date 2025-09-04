@@ -10,6 +10,8 @@ class ItemCreate(BaseModel):
     price: float = Field(gt=0)
     company_id: UUID
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class ItemResponse(BaseModel):
     id: UUID
