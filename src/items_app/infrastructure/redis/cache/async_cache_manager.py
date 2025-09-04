@@ -30,9 +30,10 @@ class AsyncCacheManager:
     async def delete(self, *keys: str) -> int:
         return await self._redis.delete(*keys)
 
-    async def delete_pattern(self, pattern: str) -> int:
+    async def delete_pattern(self, *patterns: str) -> int:
         keys_to_delete = []
-        matching_keys = self._redis.scan_iter(match=pattern)
-        async for key in matching_keys:
-            keys_to_delete.append(key)
+        for pattern in patterns:
+            matching_keys = self._redis.scan_iter(match=pattern)
+            async for key in matching_keys:
+                keys_to_delete.append(key)
         return await self._redis.delete(*keys_to_delete) if keys_to_delete else 0

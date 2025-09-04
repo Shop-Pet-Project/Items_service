@@ -61,5 +61,6 @@ def get_items_app_service(
 
 def get_companies_app_service(
     company_repo: Annotated[CompanyRepo, Depends(get_company_repo)],
+    cache: Annotated[AsyncCacheManager, Depends(get_async_cache_manager)]
 ) -> CompaniesApplicationsService:
-    return CompaniesApplicationsService(company_repo=company_repo)
+    return CompaniesApplicationsService(company_repo=company_repo, cache=cache)
