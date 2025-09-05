@@ -2,31 +2,12 @@ import uuid
 import json
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
 from sqlalchemy import insert
-from items_app.main import app
-from items_app.api.providers import get_session
-from items_app.infrastructure.postgres.models import Base, Company
-from tests.integration.conftest import TestingSessionLocal, engine
+from items_app.infrastructure.postgres.models import Company
+from tests.integration.conftest import TestingSessionLocal, client
 
 
-async def override_get_session():
-    async with TestingSessionLocal() as session:
-        yield session
-
-
-app.dependency_overrides[get_session] = override_get_session
-
-
-# --- Фикстуры ---
-@pytest_asyncio.fixture(autouse=True)
-async def cleanup_database():
-    async with engine.begin() as conn:
-        for table in Base.metadata.sorted_tables:
-            await conn.execute(table.delete())
-    yield
-
-
+# --- Фикстура для передачи аргумента в роуты ---
 @pytest_asyncio.fixture
 async def company_id():
     async with TestingSessionLocal() as session:
@@ -34,13 +15,6 @@ async def company_id():
         await session.execute(insert(Company).values(id=comp_id, name="Test Company"))
         await session.commit()
         return str(comp_id)
-
-
-@pytest_asyncio.fixture
-async def client():
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        yield ac
 
 
 # --- Тесты ---
@@ -79,7 +53,7 @@ async def test_get_item_by_id(client, company_id):
     )
     item_id = create_resp.json()["item"]["id"]
 
-    get_resp = await client.get(f"/items/{item_id}")
+    get_resp = await client.get(f"/items/{item_id}", params={"company_id": company_id})
     assert get_resp.status_code == 200
     data = get_resp.json()
     assert data["id"] == item_id
@@ -89,9 +63,9 @@ async def test_get_item_by_id(client, company_id):
 
 
 @pytest.mark.asyncio
-async def test_get_item_by_invalid_id(client):
+async def test_get_item_by_invalid_id(client, company_id):
     invalid_id = "123e4567-e89b-12d3-a456-426614174000"
-    resp = await client.get(f"/items/{invalid_id}")
+    resp = await client.get(f"/items/{invalid_id}", params={"company_id": company_id})
     assert resp.status_code == 404
     assert resp.json()["detail"] == f"Item with item_id={invalid_id} not found"
 
@@ -107,7 +81,10 @@ async def test_get_many_get_success(client, company_id):
     id1 = resp1.json()["item"]["id"]
     id2 = resp2.json()["item"]["id"]
 
-    resp = await client.get(f"/items/get-many?item_ids={id1}&item_ids={id2}")
+    resp = await client.get(
+        "/items/get-many",
+        params={"company_id": company_id, "item_ids": [id1, id2]},
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert isinstance(data, list)
@@ -115,18 +92,21 @@ async def test_get_many_get_success(client, company_id):
 
 
 @pytest.mark.asyncio
-async def test_get_many_get_empty_list(client):
-    resp = await client.get("/items/get-many")
+async def test_get_many_get_empty_list(client, company_id):
+    resp = await client.get("/items/get-many", params={"company_id": company_id})
     assert resp.status_code == 422
     assert resp.json()["detail"] == "Empty list of item IDs provided"
 
 
 @pytest.mark.asyncio
-async def test_get_many_get_all_invalid_ids(client):
+async def test_get_many_get_all_invalid_ids(client, company_id):
     id1 = str(uuid.uuid4())
     id2 = str(uuid.uuid4())
 
-    resp = await client.get(f"/items/get-many?item_ids={id1}&item_ids={id2}")
+    resp = await client.get(
+        "/items/get-many",
+        params={"company_id": company_id, "item_ids": [id1, id2]},
+    )
     assert resp.status_code == 404
     assert "No items found" in resp.json()["detail"]
 
@@ -141,7 +121,8 @@ async def test_get_many_get_partial_invalid_ids(client, company_id):
     invalid_id = str(uuid.uuid4())
 
     resp = await client.get(
-        f"/items/get-many?item_ids={valid_id}&item_ids={invalid_id}"
+        "/items/get-many",
+        params={"company_id": company_id, "item_ids": [valid_id, invalid_id]},
     )
     assert resp.status_code == 404
     assert invalid_id in resp.json()["detail"]
@@ -159,24 +140,36 @@ async def test_get_many_post_success(client, company_id):
     id2 = resp2.json()["item"]["id"]
 
     payload = {"item_ids": [id1, id2]}
-    resp = await client.post("/items/get-many", content=json.dumps(payload))
+    resp = await client.post(
+        "/items/get-many",
+        params={"company_id": company_id},
+        content=json.dumps(payload),
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert {item["id"] for item in data} == {id1, id2}
 
 
 @pytest.mark.asyncio
-async def test_get_many_post_empty_list(client):
+async def test_get_many_post_empty_list(client, company_id):
     payload = {"item_ids": []}
-    resp = await client.post("/items/get-many", content=json.dumps(payload))
+    resp = await client.post(
+        "/items/get-many",
+        params={"company_id": company_id},
+        content=json.dumps(payload),
+    )
     assert resp.status_code == 422
     assert resp.json()["detail"] == "Empty list of item IDs provided"
 
 
 @pytest.mark.asyncio
-async def test_get_many_post_all_invalid_ids(client):
+async def test_get_many_post_all_invalid_ids(client, company_id):
     payload = {"item_ids": [str(uuid.uuid4()), str(uuid.uuid4())]}
-    resp = await client.post("/items/get-many", content=json.dumps(payload))
+    resp = await client.post(
+        "/items/get-many",
+        params={"company_id": company_id},
+        content=json.dumps(payload),
+    )
     assert resp.status_code == 404
     assert "No items found" in resp.json()["detail"]
 
@@ -190,7 +183,11 @@ async def test_get_many_post_partial_invalid_ids(client, company_id):
     invalid_id = str(uuid.uuid4())
 
     payload = {"item_ids": [valid_id, invalid_id]}
-    resp = await client.post("/items/get-many", content=json.dumps(payload))
+    resp = await client.post(
+        "/items/get-many",
+        params={"company_id": company_id},
+        content=json.dumps(payload),
+    )
     assert resp.status_code == 404
     assert invalid_id in resp.json()["detail"]
 
@@ -215,6 +212,7 @@ async def test_get_all_items(client, company_id):
 async def test_get_all_items_with_empty_db(client):
     resp = await client.get("/items")
     data = resp.json()
+    assert resp.status_code == 200
     assert data == {"message": "No items in database"}
 
 
@@ -234,7 +232,7 @@ async def test_update_item_data_by_id(client, company_id):
     assert upd_data["item"]["title"] == "Coca Cola"
     assert upd_data["item"]["price"] == 4.99
 
-    get_resp = await client.get(f"/items/{item_id}")
+    get_resp = await client.get(f"/items/{item_id}", params={"company_id": company_id})
     assert get_resp.json()["title"] == "Coca Cola"
 
 
@@ -261,18 +259,18 @@ async def test_delete_item_by_id(client, company_id):
     )
     item_id = create_resp.json()["item"]["id"]
 
-    del_resp = await client.delete(f"/items/{item_id}")
+    del_resp = await client.delete(f"/items/{item_id}", params={"company_id": company_id})
     assert del_resp.status_code == 200
     assert f"{item_id}" in del_resp.json()["message"]
 
-    get_resp = await client.get(f"/items/{item_id}")
+    get_resp = await client.get(f"/items/{item_id}", params={"company_id": company_id})
     assert get_resp.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_delete_item_by_invalid_id(client):
+async def test_delete_item_by_invalid_id(client, company_id):
     invalid_id = "123e4567-e89b-12d3-a456-426614174000"
-    del_resp = await client.delete(f"/items/{invalid_id}")
+    del_resp = await client.delete(f"/items/{invalid_id}", params={"company_id": company_id})
     assert del_resp.status_code == 404
     assert del_resp.json()["detail"] == f"No such item with item_id={invalid_id}"
 
@@ -289,27 +287,31 @@ async def test_delete_items_by_ids(client, company_id):
     id2 = resp2.json()["item"]["id"]
 
     del_resp = await client.request(
-        "DELETE", "/items/delete-many", content=json.dumps({"item_ids": [id1, id2]})
+        "DELETE",
+        "/items/delete-many",
+        params={"company_id": company_id},
+        content=json.dumps({"item_ids": [id1, id2]}),
     )
     assert del_resp.status_code == 200
     assert (
         f"Items with IDs [{id1}, {id2}] have been deleted" == del_resp.json()["message"]
     )
 
-    get_resp1 = await client.get(f"/items/{id1}")
-    get_resp2 = await client.get(f"/items/{id2}")
+    get_resp1 = await client.get(f"/items/{id1}", params={"company_id": company_id})
+    get_resp2 = await client.get(f"/items/{id2}", params={"company_id": company_id})
     assert get_resp1.status_code == 404
     assert get_resp2.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_delete_items_by_invalid_ids(client):
+async def test_delete_items_by_invalid_ids(client, company_id):
     invalid_id1 = "123e4567-e89b-12d3-a456-426614174000"
     invalid_id2 = "123e4567-e89b-12d3-a456-426614174001"
 
     del_resp = await client.request(
         "DELETE",
         "/items/delete-many",
+        params={"company_id": company_id},
         content=json.dumps({"item_ids": [invalid_id1, invalid_id2]}),
     )
     assert del_resp.status_code == 404
@@ -320,9 +322,12 @@ async def test_delete_items_by_invalid_ids(client):
 
 
 @pytest.mark.asyncio
-async def test_delete_items_with_empty_list(client):
+async def test_delete_items_with_empty_list(client, company_id):
     del_resp = await client.request(
-        "DELETE", "/items/delete-many", content=json.dumps({"item_ids": []})
+        "DELETE",
+        "/items/delete-many",
+        params={"company_id": company_id},
+        content=json.dumps({"item_ids": []}),
     )
     assert del_resp.status_code == 422
     assert del_resp.json()["detail"] == "Empty list of item IDs provided"
@@ -339,6 +344,7 @@ async def test_delete_items_with_partial_invalid_ids(client, company_id):
     del_resp = await client.request(
         "DELETE",
         "/items/delete-many",
+        params={"company_id": company_id},
         content=json.dumps({"item_ids": [valid_id, invalid_id]}),
     )
     assert del_resp.status_code == 404

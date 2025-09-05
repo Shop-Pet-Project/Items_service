@@ -1,37 +1,7 @@
 import uuid
 import pytest
-import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
-from items_app.main import app
-from items_app.api.providers import get_session
 from items_app.infrastructure.postgres.models import Base
-from tests.integration.conftest import TestingSessionLocal, engine
-
-
-# --- Переопределение зависимости ---
-async def override_get_session():
-    async with TestingSessionLocal() as session:
-        yield session
-
-
-app.dependency_overrides[get_session] = override_get_session
-
-
-# --- Очистка базы перед каждым тестом ---
-@pytest_asyncio.fixture(autouse=True)
-async def cleanup_database():
-    async with engine.begin() as conn:
-        for table in Base.metadata.sorted_tables:
-            await conn.execute(table.delete())
-    yield
-
-
-# --- Клиент ---
-@pytest_asyncio.fixture
-async def client():
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        yield ac
+from tests.integration.conftest import client
 
 
 # --- Тесты ---
