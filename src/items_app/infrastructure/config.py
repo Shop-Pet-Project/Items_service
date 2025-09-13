@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 """
@@ -9,10 +10,17 @@ from abc import ABC, abstractmethod
 Для режима "docker" используется база данных PostgreSQL, запущенная в Docker-контейнере.
 По умолчанию используется режим "docker".
 """
-ENV_MODE = "development"
+class Envoriment(BaseSettings):
+    ENV_MODE: str
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
 
 
-class BaseConfig(ABC):
+class BaseConfig(BaseSettings, ABC):
     """
     Абстрактный, базовый класс конфигурации.
     """
@@ -20,10 +28,10 @@ class BaseConfig(ABC):
     # --- Конфигурация базы данных PostgreSQL ---
     DB_ASYNC_DRIVER: str = "postgresql+asyncpg"
     DB_SYNC_DRIVER: str = "postgresql+psycopg2"
-    DB_USER: str = "items_user"
-    DB_PASSWORD: str = "items_password"
+    DB_USER: str
+    DB_PASSWORD: str
     DB_PORT: int = 5432
-    DB_NAME: str = "items_db"
+    DB_NAME: str
 
     @property
     @abstractmethod
@@ -63,6 +71,12 @@ class BaseConfig(ABC):
         Формирует URL для Alembic.
         """
         return f"{self.DB_SYNC_DRIVER}://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
 
 
 class DevelopmentConfig(BaseConfig):
@@ -107,4 +121,16 @@ class DockerConfig(BaseConfig):
         return "redis"
 
 
-config = DevelopmentConfig() if ENV_MODE == "development" else DockerConfig()
+
+def settings_fabric() -> BaseConfig:
+    env = Envoriment()
+    env_mode = env.ENV_MODE
+    if env_mode == "development":
+        return DevelopmentConfig()
+    elif env_mode == "docker":
+        return DockerConfig()
+    else:
+        raise TypeError
+    
+
+config = settings_fabric()
