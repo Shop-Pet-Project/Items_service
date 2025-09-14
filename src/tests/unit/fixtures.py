@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
+
 # --- Мок репозитория для работы с БД ---
 @pytest.fixture
 def mock_repo():
@@ -11,5 +12,5 @@ def mock_repo():
 @pytest.fixture
 def mock_cache():
     cache = AsyncMock()
-    cache.generate_key = MagicMock(side_effect = lambda *args: ":".join(args))
+    cache.generate_key = MagicMock(side_effect=lambda *args: ":".join(args))
     return cache

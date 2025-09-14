@@ -1,5 +1,6 @@
 import pytest_asyncio
 
+
 class FakeRedisClient:
     def __init__(self):
         self._store = {}
@@ -22,11 +23,12 @@ class FakeRedisClient:
         for key in list(self._store.keys()):
             yield key
 
+
 @pytest_asyncio.fixture(autouse=True)
 async def mock_async_redis_client(monkeypatch):
     fake = FakeRedisClient()
     monkeypatch.setattr(
         "items_app.infrastructure.redis.cache.async_client.AsyncRedisClient",
-        lambda: fake
+        lambda: fake,
     )
     yield

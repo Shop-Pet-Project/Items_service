@@ -54,13 +54,13 @@ def get_async_cache_manager(
 # --- Получение сервисов для работы с сущностями ---
 def get_items_app_service(
     item_repo: Annotated[ItemRepo, Depends(get_item_repo)],
-    cache: Annotated[AsyncCacheManager, Depends(get_async_cache_manager)]
+    cache: Annotated[AsyncCacheManager, Depends(get_async_cache_manager)],
 ) -> ItemsApplicationsService:
     return ItemsApplicationsService(item_repo=item_repo, cache=cache)
 
 
 def get_companies_app_service(
     company_repo: Annotated[CompanyRepo, Depends(get_company_repo)],
-    cache: Annotated[AsyncCacheManager, Depends(get_async_cache_manager)]
+    cache: Annotated[AsyncCacheManager, Depends(get_async_cache_manager)],
 ) -> CompaniesApplicationsService:
     return CompaniesApplicationsService(company_repo=company_repo, cache=cache)

@@ -259,7 +259,9 @@ async def test_delete_item_by_id(client, company_id):
     )
     item_id = create_resp.json()["item"]["id"]
 
-    del_resp = await client.delete(f"/items/{item_id}", params={"company_id": company_id})
+    del_resp = await client.delete(
+        f"/items/{item_id}", params={"company_id": company_id}
+    )
     assert del_resp.status_code == 200
     assert f"{item_id}" in del_resp.json()["message"]
 
@@ -270,7 +272,9 @@ async def test_delete_item_by_id(client, company_id):
 @pytest.mark.asyncio
 async def test_delete_item_by_invalid_id(client, company_id):
     invalid_id = "123e4567-e89b-12d3-a456-426614174000"
-    del_resp = await client.delete(f"/items/{invalid_id}", params={"company_id": company_id})
+    del_resp = await client.delete(
+        f"/items/{invalid_id}", params={"company_id": company_id}
+    )
     assert del_resp.status_code == 404
     assert del_resp.json()["detail"] == f"No such item with item_id={invalid_id}"
 

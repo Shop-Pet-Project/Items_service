@@ -43,7 +43,7 @@ async def cleanup_database():
     async with engine.begin() as conn:
         for table in reversed(Base.metadata.sorted_tables):
             await conn.execute(table.delete())
-    
+
     redis_client = AsyncRedisClient()
     async for key in redis_client.scan_iter("*"):
         await redis_client.delete(key)

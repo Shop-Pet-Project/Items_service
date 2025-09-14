@@ -11,7 +11,8 @@ from items_app.application.companies_applications.companies_applications_service
     CompaniesApplicationsService,
 )
 from items_app.application.items_applications.items_applications_exceptions import (
-    ItemNotFound, NoAccessToItem
+    ItemNotFound,
+    NoAccessToItem,
 )
 from items_app.application.companies_applications.companies_applications_exceptions import (
     CompanyNotFound,

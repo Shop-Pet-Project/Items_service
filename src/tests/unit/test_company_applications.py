@@ -14,6 +14,7 @@ from items_app.application.companies_applications.companies_applications_excepti
 def service(mock_repo, mock_cache):
     return CompaniesApplicationsService(company_repo=mock_repo, cache=mock_cache)
 
+
 @pytest.mark.asyncio
 async def test_create_company_success(service, mock_repo):
     company = MagicMock()
@@ -24,6 +25,7 @@ async def test_create_company_success(service, mock_repo):
     mock_repo.add_company.assert_awaited_once_with(company_data=company)
     mock_repo.commit.assert_awaited_once()
     assert result is company
+
 
 @pytest.mark.asyncio
 async def test_fetch_company_by_id_found(service, mock_repo, mock_cache):
@@ -38,6 +40,7 @@ async def test_fetch_company_by_id_found(service, mock_repo, mock_cache):
     mock_cache.set.assert_awaited_once()
     assert result is fake_company
 
+
 @pytest.mark.asyncio
 async def test_fetch_company_by_id_not_found(service, mock_repo, mock_cache):
     company_id = uuid4()
@@ -46,6 +49,7 @@ async def test_fetch_company_by_id_not_found(service, mock_repo, mock_cache):
 
     with pytest.raises(CompanyNotFound):
         await service.fetch_company_by_id(company_id)
+
 
 @pytest.mark.asyncio
 async def test_fetch_all_companies_success(service, mock_repo, mock_cache):
@@ -59,6 +63,7 @@ async def test_fetch_all_companies_success(service, mock_repo, mock_cache):
     mock_cache.set.assert_awaited_once()
     assert result == companies
 
+
 @pytest.mark.asyncio
 async def test_fetch_all_companies_empty(service, mock_repo, mock_cache):
     mock_cache.get.return_value = None
@@ -69,6 +74,7 @@ async def test_fetch_all_companies_empty(service, mock_repo, mock_cache):
     mock_repo.get_all_companies.assert_awaited_once_with(0, 10)
     mock_cache.set.assert_awaited_once()
     assert result == []
+
 
 @pytest.mark.asyncio
 async def test_update_company_data_success(service, mock_repo):
@@ -81,6 +87,7 @@ async def test_update_company_data_success(service, mock_repo):
     mock_repo.commit.assert_awaited_once()
     assert result is company
 
+
 @pytest.mark.asyncio
 async def test_update_company_data_not_found(service, mock_repo):
     company = MagicMock()
@@ -90,6 +97,7 @@ async def test_update_company_data_not_found(service, mock_repo):
         await service.update_company_data(company)
 
     mock_repo.rollback.assert_awaited_once()
+
 
 @pytest.mark.asyncio
 async def test_delete_company_success(service, mock_repo):
@@ -101,6 +109,7 @@ async def test_delete_company_success(service, mock_repo):
     mock_repo.remove_company_by_id.assert_awaited_once_with(company_id=company_id)
     mock_repo.commit.assert_awaited_once()
     assert result is True
+
 
 @pytest.mark.asyncio
 async def test_delete_company_not_found(service, mock_repo):

@@ -16,7 +16,7 @@ class JsonSerializer(BaseSerializer):
     def _default(self, obj: Any) -> Any:
         if isinstance(obj, UUID):
             return {"__type__": "UUID", "value": str(obj)}
-        
+
         if isinstance(obj, DeclarativeBase):
             mapper = obj.__mapper__
             data = {col.key: getattr(obj, col.key) for col in mapper.column_attrs}

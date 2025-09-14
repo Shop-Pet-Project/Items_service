@@ -23,7 +23,9 @@ class CompaniesApplicationsService:
     async def _invalidate_companies_and_items_cache(self):
         invalidate_companies_cache_key = self.cache.generate_key("companies", "*")
         invalidate_items_cache_key = self.cache.generate_key("items", "*")
-        await self.cache.delete_pattern(invalidate_companies_cache_key, invalidate_items_cache_key)
+        await self.cache.delete_pattern(
+            invalidate_companies_cache_key, invalidate_items_cache_key
+        )
 
     async def create_company(self, new_company: Company) -> Optional[Company]:
         try:
@@ -50,17 +52,19 @@ class CompaniesApplicationsService:
             await self.cache.set(cache_key, response)
             return response
         except Exception as e:
-            logger.error(f"Error of getting company by id: {e}")
+            logger.error(f"Error of fetching company by id: {e}")
             raise
 
     async def fetch_all_companies(
         self, offset: Optional[int], limit: Optional[int]
     ) -> List[Company] | None:
         try:
-            cache_key = self.cache.generate_key("companies", "all", f"offset={offset}", f"limit={limit}")
-            if cache_value := await self.cache.get(cache_key): 
+            cache_key = self.cache.generate_key(
+                "companies", "all", f"offset={offset}", f"limit={limit}"
+            )
+            if cache_value := await self.cache.get(cache_key):
                 return cache_value
-            
+
             response = await self.company_repo.get_all_companies(offset, limit)
             await self.cache.set(cache_key, response)
             return response

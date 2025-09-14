@@ -10,13 +10,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 Для режима "docker" используется база данных PostgreSQL, запущенная в Docker-контейнере.
 По умолчанию используется режим "docker".
 """
+
+
 class Envoriment(BaseSettings):
     ENV_MODE: str
 
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
 
 
@@ -71,11 +71,9 @@ class BaseConfig(BaseSettings, ABC):
         Формирует URL для Alembic.
         """
         return f"{self.DB_SYNC_DRIVER}://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
-        
+
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
 
 
@@ -121,7 +119,6 @@ class DockerConfig(BaseConfig):
         return "redis"
 
 
-
 def settings_fabric() -> BaseConfig:
     env = Envoriment()
     env_mode = env.ENV_MODE
@@ -131,6 +128,6 @@ def settings_fabric() -> BaseConfig:
         return DockerConfig()
     else:
         raise TypeError
-    
+
 
 config = settings_fabric()

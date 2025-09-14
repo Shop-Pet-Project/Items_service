@@ -2,7 +2,8 @@ import logging
 from uuid import UUID
 from typing import List, Optional
 from items_app.application.items_applications.items_applications_exceptions import (
-    ItemNotFound, NoAccessToItem
+    ItemNotFound,
+    NoAccessToItem,
 )
 from items_app.infrastructure.postgres.models import Item
 from items_app.infrastructure.postgres.repositories.item_repo import ItemRepo
@@ -34,14 +35,18 @@ class ItemsApplicationsService:
 
     async def fetch_item_by_id(self, item_id: UUID, company_id: UUID) -> Item | None:
         try:
-            cache_key = self.cache.generate_key("items", f"company_id={company_id}", f"item_id={item_id}")
+            cache_key = self.cache.generate_key(
+                "items", f"company_id={company_id}", f"item_id={item_id}"
+            )
             if cache_value := await self.cache.get(cache_key):
                 return cache_value
             response = await self.item_repo.get_item_by_id(item_id=item_id)
             if not response:
                 raise ItemNotFound(f"Item with item_id={item_id} not found")
             if response.company_id != company_id:
-                raise NoAccessToItem(f"Comapany with ID {company_id} do not have access for item with ID {item_id}")
+                raise NoAccessToItem(
+                    f"Comapany with ID {company_id} do not have access for item with ID {item_id}"
+                )
             await self.cache.set(cache_key, response)
             return response
         except Exception as e:
@@ -65,10 +70,14 @@ class ItemsApplicationsService:
             logger.error(f"Error of getting existing and missing ids: {e}")
             raise
 
-    async def fetch_items_by_ids(self, item_ids: List[UUID], company_id: UUID) -> List[Item] | None:
+    async def fetch_items_by_ids(
+        self, item_ids: List[UUID], company_id: UUID
+    ) -> List[Item] | None:
         try:
             items_ids_for_cache = ",".join(sorted(str(i) for i in item_ids))
-            cache_key = self.cache.generate_key("items", f"company_id={company_id}", f"items_ids={items_ids_for_cache}")
+            cache_key = self.cache.generate_key(
+                "items", f"company_id={company_id}", f"items_ids={items_ids_for_cache}"
+            )
             if cache_value := await self.cache.get(cache_key):
                 return cache_value
             response = await self.item_repo.get_items_by_ids(item_ids=item_ids)
@@ -88,7 +97,9 @@ class ItemsApplicationsService:
         self, company_id: UUID
     ) -> List[Item] | None:
         try:
-            cache_key = self.cache.generate_key("items", f"company_id={company_id}", "all")
+            cache_key = self.cache.generate_key(
+                "items", f"company_id={company_id}", "all"
+            )
             if cache_value := await self.cache.get(cache_key):
                 return cache_value
 
@@ -109,10 +120,12 @@ class ItemsApplicationsService:
         self, offset: Optional[int], limit: Optional[int]
     ) -> List[Item] | None:
         try:
-            cache_key = self.cache.generate_key("items", "all", f"offset={offset}", f"limit={limit}")
+            cache_key = self.cache.generate_key(
+                "items", "all", f"offset={offset}", f"limit={limit}"
+            )
             if cache_value := await self.cache.get(cache_key):
                 return cache_value
-            
+
             response = await self.item_repo.get_items(offset, limit)
             await self.cache.set(cache_key, response)
             return response
