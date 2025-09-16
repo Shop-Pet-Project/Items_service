@@ -5,9 +5,6 @@ from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from items_app.infrastructure.postgres.models import User, Company
-from items_app.infrastructure.postgres.repositories.user_repository.user_repo_exceptions import (
-    UserHasCompaniesError,
-)
 
 
 logger = logging.getLogger(__name__)
@@ -63,7 +60,18 @@ class UserRepo:
         except SQLAlchemyError:
             raise
 
-    async def get_companies_own_by_user_by_id(
+    async def get_several_users_by_ids(
+            self, user_ids: List[UUID]
+    ) -> Optional[List[User]]:
+        try:
+            stmt = select(User).where(User.id.in_(user_ids))
+            cursor = await self._session.execute(stmt)
+            result = list(cursor.scalars().all())
+            return result or None
+        except SQLAlchemyError:
+            raise
+
+    async def get_user_companies_by_id(
         self, user_id: UUID, offset: Optional[int] = 0, limit: Optional[int] = 10
     ) -> Optional[List[Company]]:
         try:
@@ -84,7 +92,10 @@ class UserRepo:
             current_user = await self.get_user_by_id(update_data.id)
             if not current_user:
                 return None
-            current_user = update_data
+            
+            for attr, value in update_data.__dict__.items():
+                setattr(current_user, attr, value)
+
             return current_user
         except SQLAlchemyError:
             await self._session.rollback()
@@ -96,20 +107,9 @@ class UserRepo:
             if not current_user:
                 return None
 
-            stmt = select(Company).where(Company.user_id == user_id)
-            result = await self._session.execute(stmt)
-            user_companies = result.scalars().all()
-
-            if user_companies:
-                raise UserHasCompaniesError(
-                    user_id=user_id, companies=[c.name for c in user_companies]
-                )
-
             await self._session.delete(current_user)
             return True
-
-        except UserHasCompaniesError:
-            raise
+        
         except SQLAlchemyError:
             await self._session.rollback()
             raise
