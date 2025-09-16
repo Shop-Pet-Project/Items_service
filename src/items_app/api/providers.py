@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, AsyncIterator
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from items_app.infrastructure.postgres.database import async_session
@@ -36,8 +36,12 @@ def get_company_repo(
 
 
 # --- Получение клиента Redis, сериализатора и менеджера кеша ---
-def get_async_redis_client() -> AsyncRedisClient:
-    return AsyncRedisClient()
+async def get_async_redis_client() -> AsyncIterator[AsyncRedisClient]:
+    client = AsyncRedisClient()
+    try:
+        yield client
+    finally:
+        await client.close()
 
 
 def get_json_serializer() -> JsonSerializer:
