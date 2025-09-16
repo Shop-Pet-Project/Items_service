@@ -1,21 +1,24 @@
 from uuid import UUID
+from typing import Union, List
 
 
-"""
-Группа исключений, ограничивающая создание пользователя.
-"""
-
-
-class UserAlreadyExistError(Exception):
+class UserApplicationsError(Exception):
     """
-    Базовый класс исключений, связанных с попыткой добавления пользователя,
-    данные которых уже есть в БД.
+    Базовый класс исключений, связанных с пользовательским сервисом.
     """
-
     pass
 
 
-class UsernameAlreadyExistError(UserAlreadyExistError):
+# --- Ошибки конфликта данных ---
+
+class ConflictDataError(UserApplicationsError):
+    """
+    Базовый класс исключений, связанных с конфликтом данных.
+    """
+    pass
+
+
+class UsernameAlreadyExistError(ConflictDataError):
     """
     Исключение, выбрасываемое при попытке создании нового пользователя,
     в случае если его username уже есть в БД.
@@ -26,11 +29,10 @@ class UsernameAlreadyExistError(UserAlreadyExistError):
 
     def __init__(self, username: str):
         self.username = username
-        msg = f"User with username {self.username} already exist"
-        super().__init__(msg)
+        super().__init__(f"User with username {self.username} already exist")
 
 
-class EmailAlreadyExistError(UserAlreadyExistError):
+class EmailAlreadyExistError(ConflictDataError):
     """
     Исключение, выбрасываемое при попытке создании нового пользователя,
     в случае если его email уже есть в БД.
@@ -41,72 +43,92 @@ class EmailAlreadyExistError(UserAlreadyExistError):
 
     def __init__(self, email: str):
         self.email = email
-        msg = f"User with email {self.email} already exist"
-        super().__init__(msg)
+        super().__init__(f"User with email {self.email} already exist")
 
 
-"""
-Группа исключений, обрабатывающая некорректные входные данные 
-при попытке получить информацию о пользователе.
-"""
+# --- Ошибки поиска данных ---
 
-
-class UserNotFoundError(Exception):
+class NotFoundError(UserApplicationsError):
     """
-    Базовый класс исключений, выбрасываемыех при попытке получить данные несуществуюшего пользователя.
+    Базовый класс исключений, связанных с отсутствием данных.
     """
-
     pass
 
 
-class UserIdNotFoundError(UserNotFoundError):
+class UserNotFoundError(NotFoundError):
     """
-    Исключение, выбрасываемое при попытки получить данные пользователя,
-    id которого отсутствует в БД.
+    Исключение, выбрасываемое при попытке получить данные несуществуюшего пользователя.
 
     Args:
-        user_id (UUID): Уникальный идентификатор пользователя.
+        user_id (UUID): ID пользователя.
     """
 
-    def __init__(self, user_id: UUID):
-        self.user_id = user_id
-        msg = f"User with ID {self.user_id} does not exist"
-        super().__init__(msg)
+    def __init__(self, user_ids: Union[UUID, List[UUID]]):
+        self.user_ids = user_ids
+        
+        if isinstance(user_ids, list):
+            # Если передан список ID
+            ids_str = ", ".join(f"'{str(uid)}'" for uid in user_ids)
+            message = f"Users with IDs {ids_str} not found"
+        else:
+            # Если передан один ID
+            message = f"User with ID '{user_ids}' not found"
+            
+        super().__init__(message)
 
 
-"""
-Группа исключений, ограничивающая права на доступ к пользователю.
-"""
+# --- Ошибки бизнес логики ---
 
-
-class NoAccessToUserError(Exception):
+class BusinessLogicError(UserApplicationsError):
     """
-    Базовый класс исключений, выбрасываемых при отказе в доступе к пользователю
+    Базовый класс исключений, связанных с ошибками бизнес логики.
     """
-
     pass
 
 
-class NoAccessRightsError(NoAccessToUserError):
+class UserHasCompaniesError(BusinessLogicError):
     """
-    Исключение, выбрасываемое, если у пользователя нет прав доступа к операции.
-    """
-
-    def __init__(self):
-        msg = "Access denied"
-        super().__init__(msg)
-
-
-class AccessAnotherUserDataError(NoAccessToUserError):
-    """
-    Исключение, возникающее при попытке получения данных пользователя
-    сторонним пользователем.
+    Исключение, выбрасываемое при попытке удалить пользователя,
+    у которого есть связанные компании.
 
     Args:
-        user_id (UUID): Уникальный идентификатор пользователя.
+        user_id (UUID): ID пользователя.
+        companies (List[str]): Список названий компаний, связанных с пользователем.
     """
 
-    def __init__(self, user_id: UUID):
+    def __init__(self, user_id: UUID, companies: list[str]):
         self.user_id = user_id
-        msg = f"You do not have access to user with user_id {self.user_id}"
-        super().__init__(msg)
+        self.companies = companies
+        companies_str = ", ".join(self.companies)
+        super().__init__(
+            f"Cannot delete user with id {self.user_id} because they have associated companies: {companies_str}"
+        )
+
+
+# --- Ошибки доступа ---
+
+class AccessError(UserApplicationsError):
+    """
+    Базовый класс исключений, связанных с ошибками доступа.
+    """
+    pass
+
+
+class ForbiddenError(AccessError):
+    """
+    Исключение, выбрасываемое при попытке доступа к ресурсу,
+    на который у пользователя нет прав доступа.
+    """
+    
+    def __init__(self, message: str = "Access denied. You do not have permission to access this resource."):
+        super().__init__(message)
+
+
+class AccessToAnotherUserError(AccessError):
+    """
+    Исключение, выбрасываемое при попытке доступа к данным другого пользователя.
+    """
+    
+    def __init__(self, target_user_id: UUID):
+        self.target_user_id = target_user_id
+        super().__init__(f"Access denied. You do not have permission to access data of user with id {self.target_user_id}.")
