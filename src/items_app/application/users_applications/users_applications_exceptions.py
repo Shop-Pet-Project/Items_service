@@ -141,7 +141,11 @@ class AccessToAnotherUserError(AccessError):
     Исключение, выбрасываемое при попытке доступа к данным другого пользователя.
     """
 
-    def __init__(self, target_user_id: Optional[UUID] = None, target_username: Optional[str] = None):
+    def __init__(
+        self,
+        target_user_id: Optional[UUID] = None,
+        target_username: Optional[str] = None,
+    ):
         if target_user_id:
             self.target_user_id = target_user_id
             super().__init__(
@@ -153,4 +157,6 @@ class AccessToAnotherUserError(AccessError):
                 f"Access denied. You do not have permission to access data of user with username '{self.username}'"
             )
         else:
-            super().__init__("Access denied. You do not have permission to access data of user.")
+            super().__init__(
+                "Access denied. You do not have permission to access data of user."
+            )

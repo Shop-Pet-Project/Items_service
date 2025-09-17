@@ -61,7 +61,7 @@ class UserCacheService:
         """Получает пользователя из кеша по ID."""
         cache_key = self._cache.generate_key("user", user_id)
         return await self._cache.get(cache_key)
-    
+
     async def get_user_by_username(self, username: str) -> Optional[User]:
         """Получает пользователя из кеша по username."""
         cache_key = self._cache.generate_key("user", username)

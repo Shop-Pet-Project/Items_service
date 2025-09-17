@@ -157,9 +157,7 @@ class UsersApplicationsService:
             logger.error(f"Error while fetching multiple users by ids: {e}")
             raise
 
-    async def get_user_by_username(
-            self, username: str
-    ) -> Optional[User]:
+    async def get_user_by_username(self, username: str) -> Optional[User]:
         """
         Получение пользователя по username для аутентификации без проверки прав доступа.
         В случае если пользователь не найден, возвращается None.
@@ -169,12 +167,12 @@ class UsersApplicationsService:
             # 1. Попытка получить данные из кеша
             if cache_value := await self._cache.get_user_by_username(username):
                 return cache_value
-            
+
             # 2. Если данных нет в кеше, идем в базу данных
             user = await self._user_repo.get_user_by_username(username)
             if not user:
                 return None
-            
+
             # 3. Кеширование полученных данных
             await self._cache.set_user(user)
 
