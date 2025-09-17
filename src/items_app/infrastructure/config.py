@@ -25,6 +25,11 @@ class BaseConfig(BaseSettings, ABC):
     Абстрактный, базовый класс конфигурации.
     """
 
+    # --- Конфигурация секретов для JWT ---
+    JWT_SECRET_KEY: str
+    JWT_ALGORITHM: str
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int
+
     # --- Конфигурация базы данных PostgreSQL ---
     DB_ASYNC_DRIVER: str = "postgresql+asyncpg"
     DB_SYNC_DRIVER: str = "postgresql+psycopg2"

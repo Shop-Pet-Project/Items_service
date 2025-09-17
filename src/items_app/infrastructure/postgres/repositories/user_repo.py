@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional
 from uuid import UUID
-from sqlalchemy import select, delete
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from items_app.infrastructure.postgres.models import User, Company
@@ -61,7 +61,7 @@ class UserRepo:
             raise
 
     async def get_several_users_by_ids(
-            self, user_ids: List[UUID]
+        self, user_ids: List[UUID]
     ) -> Optional[List[User]]:
         try:
             stmt = select(User).where(User.id.in_(user_ids))
@@ -92,7 +92,7 @@ class UserRepo:
             current_user = await self.get_user_by_id(update_data.id)
             if not current_user:
                 return None
-            
+
             for attr, value in update_data.__dict__.items():
                 setattr(current_user, attr, value)
 
@@ -109,7 +109,7 @@ class UserRepo:
 
             await self._session.delete(current_user)
             return True
-        
+
         except SQLAlchemyError:
             await self._session.rollback()
             raise

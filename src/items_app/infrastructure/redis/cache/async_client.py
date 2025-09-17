@@ -1,4 +1,3 @@
-from typing import Optional, AsyncIterator
 from redis.asyncio import Redis as AsyncRedis
 from items_app.infrastructure.config import config
 

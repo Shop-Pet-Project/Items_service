@@ -1,20 +1,23 @@
 from uuid import UUID
-from typing import Union, List
+from typing import Union, List, Optional
 
 
 class UserApplicationsError(Exception):
     """
     Базовый класс исключений, связанных с пользовательским сервисом.
     """
+
     pass
 
 
 # --- Ошибки конфликта данных ---
 
+
 class ConflictDataError(UserApplicationsError):
     """
     Базовый класс исключений, связанных с конфликтом данных.
     """
+
     pass
 
 
@@ -48,10 +51,12 @@ class EmailAlreadyExistError(ConflictDataError):
 
 # --- Ошибки поиска данных ---
 
+
 class NotFoundError(UserApplicationsError):
     """
     Базовый класс исключений, связанных с отсутствием данных.
     """
+
     pass
 
 
@@ -65,7 +70,7 @@ class UserNotFoundError(NotFoundError):
 
     def __init__(self, user_ids: Union[UUID, List[UUID]]):
         self.user_ids = user_ids
-        
+
         if isinstance(user_ids, list):
             # Если передан список ID
             ids_str = ", ".join(f"'{str(uid)}'" for uid in user_ids)
@@ -73,16 +78,18 @@ class UserNotFoundError(NotFoundError):
         else:
             # Если передан один ID
             message = f"User with ID '{user_ids}' not found"
-            
+
         super().__init__(message)
 
 
 # --- Ошибки бизнес логики ---
 
+
 class BusinessLogicError(UserApplicationsError):
     """
     Базовый класс исключений, связанных с ошибками бизнес логики.
     """
+
     pass
 
 
@@ -107,10 +114,12 @@ class UserHasCompaniesError(BusinessLogicError):
 
 # --- Ошибки доступа ---
 
+
 class AccessError(UserApplicationsError):
     """
     Базовый класс исключений, связанных с ошибками доступа.
     """
+
     pass
 
 
@@ -119,8 +128,11 @@ class ForbiddenError(AccessError):
     Исключение, выбрасываемое при попытке доступа к ресурсу,
     на который у пользователя нет прав доступа.
     """
-    
-    def __init__(self, message: str = "Access denied. You do not have permission to access this resource."):
+
+    def __init__(
+        self,
+        message: str = "Access denied. You do not have permission to access this resource.",
+    ):
         super().__init__(message)
 
 
@@ -128,7 +140,17 @@ class AccessToAnotherUserError(AccessError):
     """
     Исключение, выбрасываемое при попытке доступа к данным другого пользователя.
     """
-    
-    def __init__(self, target_user_id: UUID):
-        self.target_user_id = target_user_id
-        super().__init__(f"Access denied. You do not have permission to access data of user with id {self.target_user_id}.")
+
+    def __init__(self, target_user_id: Optional[UUID] = None, target_username: Optional[str] = None):
+        if target_user_id:
+            self.target_user_id = target_user_id
+            super().__init__(
+                f"Access denied. You do not have permission to access data of user with id {self.target_user_id}."
+            )
+        elif target_username:
+            self.username = target_username
+            super().__init__(
+                f"Access denied. You do not have permission to access data of user with username '{self.username}'"
+            )
+        else:
+            super().__init__("Access denied. You do not have permission to access data of user.")

@@ -22,7 +22,9 @@ class AsyncCacheManager:
         await self._redis.set(key, serialized_value, ex)
 
     async def mset(
-            self, mapping: Dict[str, Any], ex: Optional[int] = config.REDIS_CACHE_EXPIRE_SECONDS
+        self,
+        mapping: Dict[str, Any],
+        ex: Optional[int] = config.REDIS_CACHE_EXPIRE_SECONDS,
     ) -> None:
         serialized_mapping = {
             key: self._serializer.dumps(value) for key, value in mapping.items()
