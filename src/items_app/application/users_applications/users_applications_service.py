@@ -36,9 +36,9 @@ class UsersApplicationsService:
     Реализует логику добавления, получения, обновления и удаления пользователей.
     """
 
-    def __init__(self, user_repo: UserRepo, cache: UserCacheService):
+    def __init__(self, user_repo: UserRepo, user_cache_service: UserCacheService):
         self._user_repo = user_repo
-        self._cache = cache
+        self._cache = user_cache_service
 
     async def add_user(self, user_data: User) -> Optional[User]:
         """Добавление нового пользователя в БД при условии уникальности username и email."""
