@@ -1,4 +1,4 @@
-from typing import Annotated, AsyncIterator
+from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from items_app.api.providers.session_provider import get_session
@@ -18,7 +18,5 @@ def get_company_repo(
     return CompanyRepo(async_session=session)
 
 
-def get_user_repo(
-    session: Annotated[AsyncSession, Depends(get_session)]
-) -> UserRepo:
+def get_user_repo(session: Annotated[AsyncSession, Depends(get_session)]) -> UserRepo:
     return UserRepo(async_session=session)
