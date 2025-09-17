@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from items_app.infrastructure.redis.cache.async_cache_manager import AsyncCacheManager
-from items_app.api.providers import get_async_cache_manager
+from items_app.api.providers.redis_providers import get_async_cache_manager
 
 
 router = APIRouter(prefix="/healthy", tags=["Healthcheck"])

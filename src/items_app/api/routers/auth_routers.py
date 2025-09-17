@@ -1,5 +1,7 @@
+from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from items_app.api.providers.services_providers import get_auth_app_service
 from items_app.application.auth_applications.auth_applications_service import (
     AuthApplicationsService,
 )
@@ -22,7 +24,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     response_model=UserResponseSchema,
 )
 async def register_new_user(
-    user_data: UserCreateSchema, auth_service: AuthApplicationsService = Depends(...)
+    user_data: UserCreateSchema, 
+    auth_service: Annotated[AuthApplicationsService, Depends(get_auth_app_service)]
 ):
     try:
         new_user = await auth_service.register_user(
@@ -48,8 +51,8 @@ async def register_new_user(
     "/login", summary="Аутентификация пользователя", response_model=TokenSchema
 )
 async def login_user(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    auth_service: AuthApplicationsService = Depends(...),
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    auth_service: Annotated[AuthApplicationsService, Depends(get_auth_app_service)]
 ):
     try:
         access_token_data = await auth_service.login_user_for_access_token(

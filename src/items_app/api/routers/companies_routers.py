@@ -2,7 +2,7 @@ import logging
 from uuid import UUID
 from typing import Annotated, List, Optional, Union, Dict
 from fastapi import APIRouter, Depends, HTTPException
-from items_app.api.providers import get_companies_app_service
+from items_app.api.providers.services_providers import get_companies_app_service
 from items_app.api.schemas.company_schemas import (
     CompanyCreate,
     CompanyResponse,
