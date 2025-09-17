@@ -44,17 +44,17 @@ class UsersApplicationsService:
         """Добавление нового пользователя в БД при условии уникальности username и email."""
         try:
             # 1. Проверка на уникальность username и email
-            existing_user_by_username = self._user_repo.get_user_by_username(
+            existing_user_by_username = await self._user_repo.get_user_by_username(
                 user_data.username
             )
             if existing_user_by_username:
                 raise UsernameAlreadyExistError(user_data.username)
-            existing_user_by_email = self._user_repo.get_user_by_email(user_data.email)
+            existing_user_by_email = await self._user_repo.get_user_by_email(user_data.email)
             if existing_user_by_email:
                 raise EmailAlreadyExistError(user_data.email)
 
             # 2. Если user_data прошла проверку на уникальность, добавляем в БД
-            new_user = self._user_repo.add_user(user_data)
+            new_user = await self._user_repo.add_user(user_data)
             await self._user_repo.commit()
 
             # 3. ИНВАЛИДАЦИЯ: очищаем кеш со списком всех пользователей
@@ -67,7 +67,7 @@ class UsersApplicationsService:
             logger.error(f"Database error adding user: {e}")
             raise
         except Exception as e:
-            self._user_repo.rollback()
+            await self._user_repo.rollback()
             logger.error(f"Error adding user: {e}")
             raise
 

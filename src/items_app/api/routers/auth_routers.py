@@ -15,7 +15,7 @@ from items_app.application.auth_applications.auth_applications_exceptions import
 )
 
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 @router.post(

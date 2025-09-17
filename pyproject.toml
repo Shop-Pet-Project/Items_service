@@ -13,6 +13,7 @@ dependencies = [
     "mypy>=1.17.1",
     "passlib[bcrypt]>=1.7.4",
     "psycopg2-binary>=2.9.10",
+    "pydantic[email]>=2.11.7",
     "pydantic-settings>=2.10.1",
     "pytest>=8.4.1",
     "pytest-asyncio>=1.1.0",
@@ -20,6 +21,7 @@ dependencies = [
     "redis>=6.4.0",
     "ruff>=0.12.8",
     "uvicorn>=0.35.0",
+    "python-multipart>=0.0.20",
 ]
 
 [build-system]
